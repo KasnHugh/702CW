@@ -5,26 +5,23 @@ Created on Wed Nov  4 17:55:26 2020
 @author: groes
 """
 
-def load_data(path, dl):
+def load_data(path):
     '''
-    Parameters:
-    
-    path (str): The path to the folder you either want to download the dataset to
-    or where the test.pt and training.pt files are located if you have already downloaded.
-    
-    dl (boolean): If True, the dataset is downloaded to the path, if False, the function
-    uses the test.pt and training.pt files already downloaded
-    
-    Returns:
-    The mnist dataset
-    
-    See also: https://pytorch.org/docs/stable/torchvision/datasets.html#mnist
-    
+    Parameters
+    ----------
+    path : str
+        Absolute path to the folder you either want to store the dataset or already have it
+        
+    Returns
+    -------
+    mnist_dataset.train_data, mnist_dataset.test_data : mnist objects
+        the training and testing data of the mnist dataset
+
     '''
+    import torchvision.datasets as dset
     mnist_dataset = dset.MNIST(
         root = path,
         download = True
         )
-    return mnist_dataset
-
-
+    
+    return mnist_dataset.train_data, mnist_dataset.test_data
