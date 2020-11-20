@@ -33,7 +33,7 @@ class Neural_network:
             self.activations.append(empty_list)
         
         for i in range(number_of_hidden_layers): # no +1 to account for the output layer
-            self.inputs.append(empty_list)
+            self.g_inputs.append(empty_list)
 
 
     def split_data(self, X, y, test_size):
@@ -123,18 +123,20 @@ class Neural_network:
         
        
     
-    def __relu_activation_func(self, x):
+    def relu_activation_func(self, x):
         return np.maximum(0, x)
         
         
-    def __sigmoid_activation_func(self, x):
+    def sigmoid_activation_func(self, x):
         #x = x.float()
         x = np.exp(-x)
         x = x + 1
         x = 1/x
         return x
     
-    def __dsigmoid(self, x):
+
+    def dsigmoid(self, x):
+
         z = self.__sigmoid_activation_func(x)*(1-self.__sigmoid_activation_func(x))
         return z
 
@@ -172,6 +174,7 @@ class Neural_network:
 
     def backprop(self, list_of_matrices):
 
+        #this is a back prop for gradient descent, NOT SGD. need to change this
         self.delta_err.append(
             self.__dsigmoid(self.g_inputs[-1])*np.subtract(self.y_train, 
                                                            self.activations[-1]))
