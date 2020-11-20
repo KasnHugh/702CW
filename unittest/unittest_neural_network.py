@@ -11,11 +11,12 @@ unittest_number_of_hidden_layers = 10
 unittest_neurons_hidden_layers = (16,16, 16, 16, 16, 16, 16, 16, 16, 16)
 unittest_biases = (1,2,1)
 unittest_weight_range = (-1, 1)
+unittest_lr = 0.001
 
 unittest_model = nn.Neural_network(
     unittest_neurons_hidden_layers, 
     unittest_number_of_hidden_layers, 
-    unittest_biases
+    unittest_biases, unittest_lr
     )
 
 def unittest_cost_function():
@@ -74,3 +75,14 @@ def unittest_initialize_weights():
 
     
 unittest_initialize_weights()
+
+
+def unittest_relu_activation_func():
+    unnitest_X = [-2,4,-5,7,9]
+    activated_result = unittest_model.relu_activation_func(unnitest_X)
+    
+    assert len(activated_result) == len(unnitest_X)
+    assert list(activated_result) == [0,4,0,7,9]
+    
+ 
+unittest_relu_activation_func()
