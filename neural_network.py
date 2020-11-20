@@ -81,14 +81,15 @@ class Neural_network:
         number_of_input_nodes = X_train.shape[1]
         number_of_output_nodes = len(np.unique(y_train))
         
-        list_of_matrices = []
+        list_of_weight_matrices = []
+        
         
         # Creating weight matrix for connections from input layer to first hidden layer
         weight_matrix_first_to_hidden = np.random.uniform(
             initial_weight_range[0], initial_weight_range[1],
             [self.number_of_nodes_per_hidden_layer[0], number_of_input_nodes]
             )
-        list_of_matrices.append(weight_matrix_first_to_hidden)
+        list_of_weight_matrices.append(weight_matrix_first_to_hidden)
         
         # Creating weight matrices for the connections between hidden layers
         for i in range(1, self.number_of_hidden_layers):
@@ -97,7 +98,7 @@ class Neural_network:
                 [self.number_of_nodes_per_hidden_layer[i],
                  self.number_of_nodes_per_hidden_layer[i]]
                 )
-            list_of_matrices.append(matrix)
+            list_of_weight_matrices.append(matrix)
         
         # Creating weight matrix for connections from last hidden layer to output layer
         weight_matrix_hidden_to_output = np.random.uniform(
@@ -105,9 +106,9 @@ class Neural_network:
             [number_of_output_nodes, self.number_of_nodes_per_hidden_layer[-1]]
             )
         
-        list_of_matrices.append(weight_matrix_hidden_to_output)
+        list_of_weight_matrices.append(weight_matrix_hidden_to_output)
         
-        return list_of_matrices
+        self.list_of_weight_matrices = list_of_weight_matrices
 
     def calculate_activiations(self, weight_matrix, activations_previous_layer,
                                bias = 0, activation_func = "sigmoid"):
@@ -144,15 +145,28 @@ class Neural_network:
         return sum((y_hat-y)**2)
     
         
-    def feed_forward(self, X_train, weight_matrices):
+    def feed_forward(self, X_train):
+        '''
+        This method generates activations and g inputs
 
+        Parameters
+        ----------
+        X_train : TYPE
+            DESCRIPTION.
+
+
+        Returns
+        -------
+        None.
+
+        '''
         self.activations[0], self.g_inputs[0] = self.calculate_activiations(
-            weight_matrices[0], X_train, bias = self.bias[0]  
+            self.list_of_weight_matrices[0], X_train, bias = self.bias[0]  
             )
         
         for layer in range(1, len(self.activations)):     
             self.activations[layer], self.g_inputs[layer] = self.calculate_activiations(
-                weight_matrices[layer],
+                self.list_of_weight_matrices[layer],
                 self.activations[layer-1],
                 bias = self.bias[layer]
                 )
@@ -161,30 +175,59 @@ class Neural_network:
         
         #create an error matrix
     # TO BE DEFINED
-    def train(self, X_train, y_train, initial_weight_range = (-1, 1)):
+    #def train(self, X_train, y_train, initial_weight_range = (-1, 1)):
         
-        weight_matrices = self.initialize_weight_matrices(
-            X_train, y_train, initial_weight_range)
+     #   weight_matrices = self.initialize_weight_matrices(
+            #X_train, y_train, initial_weight_range)
     
         # TBD
-        for row in X_train: 
-            self.feed_forward(X_train, weight_matrices)
-            error = self.cost_function(self.activations[-1])
-            self.backprop(error)
+      #  for row in X_train: 
+       #     self.feed_forward(X_train, weight_matrices)
+        #    error = self.cost_function(self.activations[-1])
+         #   self.backprop(error)
+            
+            
+            
+    def train(self, X_train, y_train, epochs, batch_size = 0, initial_weight_range = (-1, 1)):
+        
+        #weight_matrices = self.initialize_weight_matrices(
+        #    X_train, y_train, initial_weight_range)
+        self.initialize_weight_matrices(X_train, y_train, initial_weight_range)
 
-    def backprop(self, list_of_matrices):
+        
+        for epoch in range(epochs):
+            # consider shuffling the batches for each epoch, such that the batches are not the same in every epoc
+            index = 0
+            if batch_size == 0:
+                self.feed_forward(X_train)
+                self.generate_error_vector()
+                self.update_weight()
+            
+            else:
+                for X, y in zip(X_train[index:batch_size, :], y_train[index:batch_size, :]):
+                    self.feed_forward(X)
+                    self.generate_error_vector()
+                    self.update_weight()
+                    index += batch_size
 
-        #this is a back prop for gradient descent, NOT SGD. need to change this
+    
+    def generate_error_vector(self):
         self.delta_err.append(
-            self.__dsigmoid(self.g_inputs[-1])*np.subtract(self.y_train, 
+            self.__dsigmoid(self.g_inputs[-1])*np.subtract(self.y_train, # do we need to specify which part of y_train to use when using batching?
                                                            self.activations[-1]))
         
+        for layer in range(self.number_of_hidden_layers-1, 1, -1):
+            self.delta_err[layer] = np.dot(self.delta_err[layer + 1].transpose(),
+                                           self.list_of_weight_matrices[layer])*self.__dsigmoid(self.g_inputs[layer])
+            
+            
+    def update_weight(self):
+
+        #this is a back prop for gradient descent, NOT SGD. need to change this
         
                 
         for layer in range(self.number_of_hidden_layers-1, 1, -1):
-            self.delta_err[layer] = np.dot(self.delta_err[layer + 1].transpose(),
-                                           self.weight_matrices[layer])*self.__dsigmoid(self.g_inputs[layer])
-            list_of_matrices[layer] += self.lr * np.dot(
+            self.list_of_weight_matrices[layer] += self.lr * np.dot(
                 self.activations[layer],self.delta_err[layer + 1].transpose()) #H thinks list of matricies should be self
 
 
