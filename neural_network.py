@@ -134,7 +134,9 @@ class Neural_network:
         x = 1/x
         return x
     
+
     def dsigmoid(self, x):
+
         z = self.__sigmoid_activation_func(x)*(1-self.__sigmoid_activation_func(x))
         return z
 
@@ -171,6 +173,7 @@ class Neural_network:
             self.backprop(error)
 
     def backprop(self, list_of_matrices):
+
         #this is a back prop for gradient descent, NOT SGD. need to change this
         self.delta_err.append(
             self.__dsigmoid(self.g_inputs[-1])*np.subtract(self.y_train, 
