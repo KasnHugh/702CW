@@ -12,22 +12,28 @@ import sys
 
 class Neural_network:
     def __init__(self, number_of_nodes_per_hidden_layer,
-                 number_of_hidden_layers, bias):
+                 number_of_hidden_layers, bias, learning_rate):
         
         self.number_of_nodes_per_hidden_layer = number_of_nodes_per_hidden_layer # should be given as a tuple or list
         self.number_of_hidden_layers = number_of_hidden_layers
         
-        if len(number_of_nodes_per_hidden_layer) != number_of_hidden_layers: 
+        if len(number_of_nodes_per_hidden_layer) != number_of_hidden_layers: #find a less dramatic function that exit, there are suggestions in moodle
             sys.exit("Number of hidden layers should match length of vector 'number of nodes per hidden layer' ")
             
         self.activations = [] # list that holds activivations for each hidden layer and the output layer
+        self.g_inputs = []
         self.bias = bias # should be given as tuple or list
+        self.delta_err = list(np.zeros(number_of_hidden_layers + 1))
+        self.lr = learning_rate
         
         # Appending empty lists to the list 'activations' such that later,
         # I can mutate the existing lists rather than appending them
         empty_list = []
         for i in range(number_of_hidden_layers + 1): # +1 to account for the output layer
             self.activations.append(empty_list)
+        
+        for i in range(number_of_hidden_layers): # no +1 to account for the output layer
+            self.inputs.append(empty_list)
 
 
     def split_data(self, X, y, test_size):
@@ -41,21 +47,17 @@ class Neural_network:
             if len(np.unique(self.y_train)) == 10 and len(np.unique(self.y_test)) == 10:
                 classes_10 = True
         
-        
-        # In feed_forward(), for each observation, the target variable needs to
-        # be an array of length 10 where each index position represents a class
-        # All values in the array is 0 except for the index position corresponding
-        # to the class of y for the datapoint in question
-        self.y_test_vectorized = []
+        #one hot encoding
+        self.y_test_onehot = [] 
         vector_length = len(np.unique(self.y_train))
         for i in self.y_train:
             vector = np.zeros(vector_length)
             vector[int(i)] = 1
-            self.y_test_vectorized.append(vector)
+            self.y_test_onehot.append(vector)
              
-        self.y_test_vectorized = np.array(self.y_test_vectorized)
+        self.y_test_onehot = np.array(self.y_test_onehot)
         
-        return self.X_train, self.X_test, self.y_train, self.y_test, self.y_test_vectorized
+        return self.X_train, self.X_test, self.y_train, self.y_test, self.y_test_onehot
     
     def initialize_weight_matrices(self, X_train, y_train, initial_weight_range):
         
@@ -66,11 +68,14 @@ class Neural_network:
         A list containing the followin ndarrays:
             
         weight_matrix_first_to_hidden : ndarray
-            A matrix (ndarray) containing randomly initialized weights to be used for the connections between the input layer and the first hidden layer
+            A matrix (ndarray) containing randomly initialized weights to be
+            used for the connections between the input layer and the first hidden layer
         hidden layer weight matrices : ndarray
-            Randomly initialzed weight matrix (ndarray) for each of the hidden layers in the network
+            Randomly initialzed weight matrix (ndarray) for each of the hidden
+            layers in the network
         weight_matrix_hidden_to_output : ndarray
-            A matrix (ndarray) containing randomly initialized weights to be used for the connections between the last hidden layer and the output layer
+            A matrix (ndarray) containing randomly initialized weights to be 
+            used for the connections between the last hidden layer and the output layer
 
         '''
         number_of_input_nodes = X_train.shape[1]
@@ -107,19 +112,16 @@ class Neural_network:
     def calculate_activiations(self, weight_matrix, activations_previous_layer,
                                bias = 0, activation_func = "sigmoid"):
         
-        # Using matmul instead of np.dot is recommended if multiplying a matrix by a matrix
-        if activations_previous_layer.ndim == 2:
-            product = np.matmul(weight_matrix, activations_previous_layer)
-        else:
-            product = np.dot(weight_matrix, activations_previous_layer) + bias
+        product = np.dot(weight_matrix, activations_previous_layer) + bias
         
         if activation_func == "sigmoid":
             new_activations = self.__sigmoid_activation_func(product)
         else:
             new_activations = self.__relu_activation_func(product)
         
-        return new_activations
+        return new_activations, product
         
+       
     
     def __relu_activation_func(self, x):
         return np.maximum(0, x)
@@ -131,56 +133,31 @@ class Neural_network:
         x = x + 1
         x = 1/x
         return x
+    
+    def __dsigmoid(self, x):
+        z = self.__sigmoid_activation_func(x)*(1-self.__sigmoid_activation_func(x))
+        return z
 
     def cost_function(self, y_hat, y):   
         return sum((y_hat-y)**2)
     
         
     def feed_forward(self, X_train, weight_matrices):
-        '''
-        TO DO:
-            The method 
-            should be called from the wrapper method once per batch - even if
-            the number of batches is equal to the number of datapoints. 
-            
-            Does my cost_function return a vector?
-            
-            
-        This function passes data forward in the network.
-        This function should be called by some wrapper function. 
 
-        Parameters
-        ----------
-        X_train : numpy array (1D or 2D)
-            A numpy array with any amount of datapoints from the input feature training dataset
-        y_test_vectorized : numpy array (1D)
-            A numpy array representing the target variable 
-
-        Returns
-        -------
-        errors : list
-            A list containing n errors where n is the number of data points
-            in the object passed as an argument to the method
-
-        '''
-        self.activations[0] = self.calculate_activiations(
-            weight_matrices[0], X_train, bias = self.bias[0]  # Can I multiply the entire X_train matrix by a weight matrix with n weights where n is the number of data points in X_train=
+        self.activations[0], self.g_inputs[0] = self.calculate_activiations(
+            weight_matrices[0], X_train, bias = self.bias[0]  
             )
-        #errors = []
-        #for row in range(len(X_train)): # I think  I can make X_train a matrix instead of looping over it like this
-            #self.activations[0] = self.calculate_activiations(weight_matrices[0], data_row)
+        
         for layer in range(1, len(self.activations)):     
-            self.activations[layer] = self.calculate_activiations(
+            self.activations[layer], self.g_inputs[layer] = self.calculate_activiations(
                 weight_matrices[layer],
                 self.activations[layer-1],
                 bias = self.bias[layer]
                 )
-            # if layer is the last layer (i.e. the output layer), calculate the error
-            #if layer == len(self.activations):
-             #   error = cost_function(self.activations[layer], y_train_vectorized, bias = self.bias[layer]) # I think the activations object needs to contain all the activations
-                #errors.append(error) 
-        #return self.activations
+          
+
         
+        #create an error matrix
     # TO BE DEFINED
     def train(self, X_train, y_train, initial_weight_range = (-1, 1)):
         
@@ -193,15 +170,19 @@ class Neural_network:
             error = self.cost_function(self.activations[-1])
             self.backprop(error)
 
+    def backprop(self, list_of_matrices):
 
-
-
-
-
-
-
-
-
+        self.delta_err.append(
+            self.__dsigmoid(self.g_inputs[-1])*np.subtract(self.y_train, 
+                                                           self.activations[-1]))
+        
+        
+                
+        for layer in range(self.number_of_hidden_layers-1, 1, -1):
+            self.delta_err[layer] = np.dot(self.delta_err[layer + 1].transpose(),
+                                           self.weight_matrices[layer])*self.__dsigmoid(self.g_inputs[layer])
+            list_of_matrices[layer] += self.lr * np.dot(
+                self.activations[layer],self.delta_err[layer + 1].transpose()) #H thinks list of matricies should be self
 
 
 
