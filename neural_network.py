@@ -138,12 +138,12 @@ class Neural_network:
 
     def dsigmoid(self, x):
 
-        z = self.__sigmoid_activation_func(x)*(1-self.__sigmoid_activation_func(x))
+        z = self.sigmoid_activation_func(x)*(1-self.sigmoid_activation_func(x))
         return z
 
     def dcost_function(self, y_calc, y, g_input): 
         '''
-        y_hat is the final activations. this is a 2D array (number of datapoints, number of output nodes), 
+        y_calc is the final activations. this is a 2D array (number of datapoints, number of output nodes), 
         every i is an array with the activations for each node calculated with the ith datapoint
         
         y is a 1D array of target values. length = number of nodes
@@ -172,11 +172,12 @@ class Neural_network:
         weight_updater = []
         for i in range(len(err)):
             weight_updater.append(err[i] * activation[i][:,np.newaxis])
+        return weight_updater
             
     
     def get_minibatch(self, X_train, y_train, batch_size = 40):
         # Hugh: I'm not sure np.ndarray is the right way to do this but I needed to use flatten
-        batch_indicies = random.sample(range(len(self.activations[-1])), batch_size)
+        batch_indicies = random.sample(range(len(X_train)), batch_size) # why have I 
         X_batch = self.X_train[batch_indicies]
         y_batch = self.y_train[batch_indicies]
         return X_batch, y_batch
@@ -220,7 +221,7 @@ class Neural_network:
                 
             #    weight_update.append(self.delta_err[layer][i] * self.activations[layer][i][:,np.newaxis])
             
-            update =  self.weight_update(self.delta_err[layer], self.activations[layer])
+            update = self.weight_update(self.delta_err[layer], self.activations[layer])
             
             self.weight_matrices[layer] += self.lr * sum(update)
 
@@ -242,18 +243,11 @@ class Neural_network:
             self.backprop(error)               
             
             
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
-            
+    def htrain(self, X_train, y_train, epochs)
+         for epoch in epochs:
+             X, y = self.get_minibatch(X_train, y_train)
+             self.feed_forward(X, self.list_of_matrices)
+             self.backprop(self.list_of_matrices)
             
             
             
