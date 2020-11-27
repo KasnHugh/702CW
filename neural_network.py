@@ -139,8 +139,8 @@ class Neural_network:
 
     def dsigmoid(self, x):
 
-        z = self.sigmoid_activation_func(x)*(1-self.sigmoid_activation_func(x))
-        return z
+        return self.sigmoid_activation_func(x)*(1-self.sigmoid_activation_func(x))
+        
 
     def dcost_function(self, y_calc, y, g_input): 
         '''
@@ -249,7 +249,7 @@ class Neural_network:
             self.backprop(error)               
             
             
-    def htrain(self, X_train, y_train, epochs)
+    def htrain(self, X_train, y_train, epochs):
          for epoch in epochs:
              X, y = self.get_minibatch(X_train, y_train)
              self.feed_forward(X, self.list_of_matrices)

@@ -20,19 +20,39 @@ unittest_model = nn.Neural_network(
     )
 
 def unittest_cost_function():
+    y_calc = np.array([[1,2,3,4,5,6,7,8,9,10],
+                         [11,12,13,14,15,16,17,18,19,20],
+                         [21,22,23,24,25,26,27,28,29,30]])
+    
+    y = np.array([[0,0,0,0,0,0,0,0,0,1],
+                         [1,0,0,0,0,0,0,0,0,0],
+                         [0,1,0,0,0,0,0,0,0,0]])
+    
+    g_input = np.array([[2,4,6,8,9,2,6,3,6,9],
+                         [7,3,1,4,5,6,7,8,9,5],
+                         [9,8,7,6,5,4,3,2,4,5]])
+    
+    result = unittest_model.dcost_function(y_calc, y, g_input)
+    
+    assert result.shape == (3, 10)
+    
+    assert result[0][0] == 0.10499358540350662
+    
+    
+    
+    
     #test_activations = np.zeros(10)
     unittest_activations_zeros = np.zeros(10)
     unittest_activations_ones = np.ones(10)
     unittest_activations_twos = np.ones(10)+1
     unittest_y_train = [1, 0, 0, 0, 0, 0, 0, 0, 0, 0]
     
-    unittest_errors_zeros = unittest_model.cost_function(
-        unittest_activations_zeros, unittest_y_train
-        )
-    unittest_errors_ones = unittest_model.cost_function(
+    unittest_errors_zeros = unittest_model.dcost_function(
+        unittest_y_train, unittest_activations_zeros)
+    unittest_errors_ones = unittest_model.dcost_function(
         unittest_activations_ones, unittest_y_train
         )
-    unittest_errors_twos = unittest_model.cost_function(
+    unittest_errors_twos = unittest_model.dcost_function(
         unittest_activations_twos, unittest_y_train
         )
     
