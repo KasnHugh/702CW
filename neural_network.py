@@ -8,6 +8,7 @@ Created on Tue Nov 17 13:50:31 2020
 
 import numpy as np
 from sklearn.model_selection import train_test_split
+import random
 import sys
 
 class Neural_network:
@@ -113,7 +114,7 @@ class Neural_network:
     def calculate_activiations(self, weight_matrix, activations_previous_layer,
                                bias = 0, activation_func = "sigmoid"):
         
-        product = np.dot(weight_matrix, activations_previous_layer) + bias
+        product = np.matmul(activations_previous_layer, weight_matrix) + bias
         
         if activation_func == "sigmoid":
             new_activations = self.__sigmoid_activation_func(product)
@@ -138,30 +139,60 @@ class Neural_network:
 
     def dsigmoid(self, x):
 
-        z = self.__sigmoid_activation_func(x)*(1-self.__sigmoid_activation_func(x))
+        z = self.sigmoid_activation_func(x)*(1-self.sigmoid_activation_func(x))
         return z
 
-    def cost_function(self, y_hat, y):   
-        return sum((y_hat-y)**2)
-    
-        
-    def feed_forward(self, X_train):
+    def dcost_function(self, y_calc, y, g_input): 
         '''
-        This method generates activations and g inputs
+        y_calc is the final activations. this is a 2D array (number of datapoints, number of output nodes), 
+        every i is an array with the activations for each node calculated with the ith datapoint
+        
+        y is a 1D array of target values. length = number of nodes
 
         Parameters
         ----------
-        X_train : TYPE
+        y_hat : TYPE
             DESCRIPTION.
-
+        y : TYPE
+            DESCRIPTION.
 
         Returns
         -------
-        None.
+        TYPE
+            DESCRIPTION.
 
         '''
+        #for this to work data_point and y need to be np.array, NOT list or tuple etc
+        return self.dsigmoid(g_input)* (y_calc-y)
+    # * gives elementwise multiplication, - gives elementwise subtraction
+    
+    def dcost_hidden_layer(self, err_layer_plus_one, weight_matric, g_input):
+        return self.dsigmoid(g_input)* np.matmul(err_layer_plus_one, weight_matric.transpose()) 
+    
+    def weight_update(self, err, activation):
+        weight_updater = []
+        for i in range(len(err)):
+            weight_updater.append(err[i] * activation[i][:,np.newaxis])
+        return weight_updater
+            
+    
+    def get_minibatch(self, X_train, y_train, batch_size = 40):
+        # Hugh: I'm not sure np.ndarray is the right way to do this but I needed to use flatten
+        batch_indicies = random.sample(range(len(X_train)), batch_size) # why have I 
+        X_batch = self.X_train[batch_indicies]
+        y_batch = self.y_train[batch_indicies]
+        return X_batch, y_batch
+        
+
+    
+        
+    def feed_forward(self, X_batch, weight_matrices):
+
+
+
         self.activations[0], self.g_inputs[0] = self.calculate_activiations(
-            self.list_of_weight_matrices[0], X_train, bias = self.bias[0]  
+
+            weight_matrices[0], X_batch, bias = self.bias[0]  
             )
         
         for layer in range(1, len(self.activations)):     
@@ -173,66 +204,90 @@ class Neural_network:
           
 
         
-        #create an error matrix
-    # TO BE DEFINED
-    #def train(self, X_train, y_train, initial_weight_range = (-1, 1)):
+
+ 
+
+    def backprop(self, list_of_matrices):
+
+            #input to this is already a batch    
+        #H: when doing a batch g_inputs[-1] is a vactor, how does that square?
+        self.delta_err[-1] =self.dcost_function(self.y_batch, self.activations[-1], self.g_inputs[-1])
         
-     #   weight_matrices = self.initialize_weight_matrices(
-            #X_train, y_train, initial_weight_range)
+        #delta_err[-1] is a 1D array the length of output nodes
+        for layer in range(self.number_of_hidden_layers-1, 1, -1):
+
+            #self.delta_err[layer] = dsigmoid(self.g_inputs[layer])* np.matmul(self.delta_err[layer+1], self.weight_matrices[layer].transpose()) 
+            #the result of the matmul is a 2D array length (datapoints, g_inputs[layer])
+            #think that both of these are the same size so its fine
+            self.delta_err[layer] = self.dcost_hidden_layer(self.delta_err[layer+1], self.weight_matrices[layer], self.g_inputs[layer])
+            
+            #weight_update = []
+            #for i in range(len(self.delta_err[layer])):
+                
+            #    weight_update.append(self.delta_err[layer][i] * self.activations[layer][i][:,np.newaxis])
+            
+            update = self.weight_update(self.delta_err[layer], self.activations[layer])
+            
+            self.weight_matrices[layer] += self.lr * sum(update)
+
+
+
+
+            
+
+       #create an error matrix
+    # TO BE DEFINED
+    def train(self, X_batch, y_batch, initial_weight_range = (-1, 1)):
+        
+        weight_matrices = self.initialize_weight_matrices(
+            X_batch, y_batch, initial_weight_range)
     
         # TBD
-      #  for row in X_train: 
-       #     self.feed_forward(X_train, weight_matrices)
-        #    error = self.cost_function(self.activations[-1])
-         #   self.backprop(error)
+        for row in X_batch: 
+            self.feed_forward(X_batch, weight_matrices)
+            error = self.cost_function(self.activations[-1])
+            self.backprop(error)               
+            
+            
+    def htrain(self, X_train, y_train, epochs)
+         for epoch in epochs:
+             X, y = self.get_minibatch(X_train, y_train)
+             self.feed_forward(X, self.list_of_matrices)
+             self.backprop(self.list_of_matrices)
             
             
             
-    def train(self, X_train, y_train, epochs, batch_size = 0, initial_weight_range = (-1, 1)):
-        
-        #weight_matrices = self.initialize_weight_matrices(
-        #    X_train, y_train, initial_weight_range)
-        self.initialize_weight_matrices(X_train, y_train, initial_weight_range)
 
-        
-        for epoch in range(epochs):
-            # consider shuffling the batches for each epoch, such that the batches are not the same in every epoc
-            index = 0
-            if batch_size == 0:
-                self.feed_forward(X_train)
-                self.generate_error_vector()
-                self.update_weight()
-            
-            else:
-                for X, y in zip(X_train[index:batch_size, :], y_train[index:batch_size, :]):
-                    self.feed_forward(X)
-                    self.generate_error_vector()
-                    self.update_weight()
-                    index += batch_size
-
-    
-    def generate_error_vector(self):
-        self.delta_err.append(
-            self.__dsigmoid(self.g_inputs[-1])*np.subtract(self.y_train, # do we need to specify which part of y_train to use when using batching?
-                                                           self.activations[-1]))
-        
-        for layer in range(self.number_of_hidden_layers-1, 1, -1):
-            self.delta_err[layer] = np.dot(self.delta_err[layer + 1].transpose(),
-                                           self.list_of_weight_matrices[layer])*self.__dsigmoid(self.g_inputs[layer])
             
             
-    def update_weight(self):
-
-        #this is a back prop for gradient descent, NOT SGD. need to change this
-        
-                
-        for layer in range(self.number_of_hidden_layers-1, 1, -1):
-            self.list_of_weight_matrices[layer] += self.lr * np.dot(
-                self.activations[layer],self.delta_err[layer + 1].transpose()) #H thinks list of matricies should be self
-
-
-
-
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
+            
 
 
 
