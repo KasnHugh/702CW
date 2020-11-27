@@ -19,6 +19,28 @@ unittest_model = nn.Neural_network(
     unittest_biases, unittest_lr
     )
 
+def unittest_sigmoid_function():
+    x = np.array([[1,0,2,0,3,0,0,0,0,1],
+                         [1,0,10,0,20,0,30,0,0,0],
+                         [0,1,0,50,0,60,0,0,0,0]])
+    
+    result = unittest_model.sigmoid_activation_func(x)
+    
+    assert result.shape == (3, 10)
+    assert result[0][1] == 0.5
+    #good thing to assert would be sigmoid(0) = 1/2 ## this is a well known result
+    #also 0<sigmoid(x)<1 for all x
+    
+def unittest_dsigmoid_function():
+    x = np.array([[1,0,2,0,3,0,0,0,0,1],
+                         [1,0,10,0,20,0,30,0,0,0],
+                         [0,1,0,50,0,60,0,0,0,0]])
+    
+    result = unittest_model.dsigmoid(x)
+    
+    assert result.shape == (3, 10)
+    assert result[0][1] == 0.25    
+
 def unittest_cost_function():
     y_calc = np.array([[1,2,3,4,5,6,7,8,9,10],
                          [11,12,13,14,15,16,17,18,19,20],
