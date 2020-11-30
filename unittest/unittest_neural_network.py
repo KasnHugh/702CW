@@ -6,10 +6,16 @@ Created on Tue Nov 17 15:15:48 2020
 """
 import neural_network as nn
 import numpy as np
+from unittest.mock import Mock
+import load_data
 
-unittest_number_of_hidden_layers = 10
-unittest_neurons_hidden_layers = (16,16, 16, 16, 16, 16, 16, 16, 16, 16)
-unittest_biases = (1,2,1)
+
+#data = load_data.load_data()
+
+
+unittest_number_of_hidden_layers = 2
+unittest_neurons_hidden_layers = np.array([3, 3]) #(16,16, 16, 16, 16, 16, 16, 16, 16, 16)
+unittest_biases = np.ones(unittest_number_of_hidden_layers)
 unittest_weight_range = (-1, 1)
 unittest_lr = 0.001
 
@@ -32,6 +38,7 @@ def unittest_sigmoid_function():
     #also 0<sigmoid(x)<1 for all x
     
 def unittest_dsigmoid_function():
+    # TO DO: Mock / stub sigmoid_activation_func
     x = np.array([[1,0,2,0,3,0,0,0,0,1],
                          [1,0,10,0,20,0,30,0,0,0],
                          [0,1,0,50,0,60,0,0,0,0]])
@@ -41,7 +48,10 @@ def unittest_dsigmoid_function():
     assert result.shape == (3, 10)
     assert result[0][1] == 0.25    
 
-def unittest_cost_function():
+def unittest_dcost_function():
+    # TO DO: 
+        # Mock / stub dsigmoid
+        
     y_calc = np.array([[1,2,3,4,5,6,7,8,9,10],
                          [11,12,13,14,15,16,17,18,19,20],
                          [21,22,23,24,25,26,27,28,29,30]])
@@ -54,15 +64,23 @@ def unittest_cost_function():
                          [7,3,1,4,5,6,7,8,9,5],
                          [9,8,7,6,5,4,3,2,4,5]])
     
+    # Experiementing - doesnt work
+    #y_calc2 = 12
+    #y2 = 5
+    # Mocking dsigmoid
+    #dsigmoid = Mock()
+    #dsigmoid.return_value = 2
+    #res = unittest_model.dcost_function(y_calc2, y2, g_input)
+    
     result = unittest_model.dcost_function(y_calc, y, g_input)
     
-    assert result.shape == (3, 10)
+    assert result.shape == g_input.shape == y.shape == y_calc.shape
     
     assert result[0][0] == 0.10499358540350662
     
     
     
-    
+    '''
     #test_activations = np.zeros(10)
     unittest_activations_zeros = np.zeros(10)
     unittest_activations_ones = np.ones(10)
@@ -80,38 +98,39 @@ def unittest_cost_function():
     
     assert unittest_errors_zeros == 1
     assert unittest_errors_ones == 9
-    assert unittest_errors_twos == 37
+    assert unittest_errors_twos == 37'''
 
-unittest_cost_function()
+unittest_dcost_function()
+
 
 def unittest_initialize_weights():
-    unittest_X_train = np.array([[21, 54, 76, 234, 25, 48, 28],
-                            [6, 4, 2, 57, 423, 54, 43],
-                            [43, 54, 76, 87, 35, 45, 23]])
+    #unittest_X_train = np.array([[21, 54, 76, 234, 25, 48, 28],
+    #                        [6, 4, 2, 57, 423, 54, 43],
+    #                        [43, 54, 76, 87, 35, 45, 23]])
 
-    unittest_Y_train = np.array([1, 2, 3, 4, 5, 6, 7, 8, 9, 0])
-
-    weights = unittest_model.initialize_weight_matrices(unittest_X_train,
-                                                        unittest_Y_train,
-                                                        unittest_weight_range)
-    number_of_input_features = unittest_X_train.shape[1]
+    #unittest_Y_train = np.array([1, 2, 3, 4, 5, 6, 7, 8, 9, 0])
+    unittest_model.split_data(data.data, data.target, 0.2)
+    #unittest_mode.split_data()
+    unittest_model.initialize_weight_matrices()
+    
+    number_of_input_features = unittest_model.X_train.shape[1] #unittest_X_train.shape[1]
     
     # Testing that there is a weight matrix for each connection between layers
-    assert len(weights) == unittest_number_of_hidden_layers + 1
+    assert len(unittest_model.list_of_weight_matrices) == unittest_number_of_hidden_layers + 1
     
     # Testing that the weight matrices have the correct number of weights
-    assert weights[0].shape[0] == unittest_neurons_hidden_layers[0]
-    assert weights[0].shape[1] == number_of_input_features
+    assert unittest_model.list_of_weight_matrices[0].shape[1] == unittest_neurons_hidden_layers[0]
+    assert unittest_model.list_of_weight_matrices[0].shape[0] == number_of_input_features
    
     # Testing that there are 10 connections between each neuron in the last hidden layer
     # and the output layer because there are 10 neurons in the output layer
-    assert weights[-1].shape[0] == 10
+    assert unittest_model.list_of_weight_matrices[-1].shape[1] == 10
     
     # Testing that there there are 16 sets of connections between last hidden layer
     # and output layer because there are 16 neurons in the last hidden layer
-    assert weights[-1].shape[1] == unittest_neurons_hidden_layers[0]
+    assert unittest_model.list_of_weight_matrices[-1].shape[0] == unittest_neurons_hidden_layers[0]
     
-    for matrix in weights:
+    for matrix in unittest_model.list_of_weight_matrices:
         assert np.max(matrix) <= 1
         assert np.min(matrix) >= -1
 
@@ -128,3 +147,112 @@ def unittest_relu_activation_func():
     
  
 unittest_relu_activation_func()
+
+def unittest_calculate_activations():
+    weight_matrix = np.array([[0,1,1,1,2],
+                             [0,2,2,2,2],
+                             [0,3,3,3,3],
+                             [0,4,4,4,4],
+                             [0,5,5,5,5]])
+    
+    activations_previous_layer = np.array([[10,6,4,2,64], [34,85,23,54,75]])
+    
+    new_activations, product = unittest_model.calculate_activations(
+        weight_matrix, activations_previous_layer)
+    
+    assert new_activations.shape == activations_previous_layer.shape
+    assert product.shape == activations_previous_layer.shape
+    assert new_activations[0][0] == 0.5
+    assert new_activations[0][1] == 1.0
+    assert product[0][0] == weight_matrix[0][0]
+    assert product[1][-1] == 898
+    
+unittest_calculate_activations()
+
+def unittest_dcost_hidden_layer():
+    #   def dcost_hidden_layer(self, err_layer_plus_one, weight_matric, g_input)
+    
+    err_layer_plus_one = np.array([np.ones(6),
+                                  np.ones(6)*2])
+    
+    weight_matrix = np.array([np.ones(6),
+                              np.ones(6)*2,
+                              np.ones(6)*3,
+                              np.ones(6)*4,
+                              np.ones(6)*5])
+    
+    g_input = np.array([[0.12, -0.65, 0, -1, 1],
+                             [0.03, -0.342, 0.54, -1, 1]])
+    
+    dcost = unittest_model.dcost_hidden_layer(err_layer_plus_one, weight_matrix, g_input) 
+        
+    assert dcost.shape == g_input.shape
+    # For each rown in dcost, there's an element for each neuron in the hidden layer
+    assert dcost.shape[1] == unittest_neurons_hidden_layers[0]
+    
+def unittest_weight_update():
+         
+    # def weight_update(self, err, activation):
+    err = np.array([np.ones(6),
+                    np.ones(6)*2])
+    
+    activations = [np.ones(unittest_neurons_hidden_layers[0]),
+                   np.ones(unittest_neurons_hidden_layers[0])*2]
+    
+    result = unittest_model.weight_update(err, activations)
+    
+    assert len(result) == len(err) == len(activations)
+    assert len(activations[0]) == len(result[0])
+    assert len(err[0]) == len(result[0][0])
+    
+    
+def unittest_feed_forward():
+    unittest_model.split_data(data.data, data.target, 0.2)
+    X_batch = unittest_model.X_train 
+    unittest_model.initialize_weight_matrices()
+    
+    #activations_previous_layer = np.array([[10,6,4,2,64], [34,85,23,54,75]])
+    
+    #unittest_model.calculate_activations(
+    #    weight_matrices[0], activations_previous_layer)
+    
+    
+    unittest_model.feed_forward(X_batch)
+    
+    for i in range(len(unittest_model.activations)):
+        assert np.max(unittest_model.activations[i]) <= 1
+        assert np.min(unittest_model.activations[i]) >= -1
+    
+    assert unittest_model.activations[0].shape == (56000, 3)
+    assert unittest_model.activations[1].shape == (56000, 3)
+    assert unittest_model.activations[2].shape == (56000, 10)
+    assert len(unittest_model.activations) == unittest_number_of_hidden_layers +1
+    assert len(unittest_model.g_inputs) == unittest_number_of_hidden_layers +1
+
+unittest_feed_forward()      
+        
+
+def unittest_softmax_output():
+    output = np.array([1,3,5])
+    softmax_output = unittest_model.softmax(output)
+    assert np.sum(softmax_output) == 1.00000
+    assert softmax_output[0] == 0.0158762
+    assert softmax_output[1] == 0.11731
+    assert softmax_output[2] == 0.866813
+    
+unittest_softmax_output()
+
+
+np.exp(output)/np.sum(output)
+    
+
+    
+    
+    
+    
+    
+    
+    
+    
+    
+
