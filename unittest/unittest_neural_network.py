@@ -6,7 +6,6 @@ Created on Tue Nov 17 15:15:48 2020
 """
 import neural_network as nn
 import numpy as np
-from unittest.mock import Mock
 import load_data
 
 
@@ -38,7 +37,6 @@ def unittest_sigmoid_function():
     #also 0<sigmoid(x)<1 for all x
     
 def unittest_dsigmoid_function():
-    # TO DO: Mock / stub sigmoid_activation_func
     x = np.array([[1,0,2,0,3,0,0,0,0,1],
                          [1,0,10,0,20,0,30,0,0,0],
                          [0,1,0,50,0,60,0,0,0,0]])
@@ -48,10 +46,12 @@ def unittest_dsigmoid_function():
     assert result.shape == (3, 10)
     assert result[0][1] == 0.25    
 
+
 def unittest_dcost_function():
     # TO DO: 
         # Mock / stub dsigmoid
         
+
     y_calc = np.array([[1,2,3,4,5,6,7,8,9,10],
                          [11,12,13,14,15,16,17,18,19,20],
                          [21,22,23,24,25,26,27,28,29,30]])
@@ -149,23 +149,17 @@ def unittest_relu_activation_func():
 unittest_relu_activation_func()
 
 def unittest_calculate_activations():
-    weight_matrix = np.array([[0,1,1,1,2],
-                             [0,2,2,2,2],
-                             [0,3,3,3,3],
-                             [0,4,4,4,4],
-                             [0,5,5,5,5]])
+    pass
+    #feedforward basically just calls this a lot so don't need to assert anything
+    #unittest_model.split_data(data.data, data.target, 0.2)
+    #X_batch = unittest_model.X_train 
+    #unittest_model.initialize_weight_matrices()
     
-    activations_previous_layer = np.array([[10,6,4,2,64], [34,85,23,54,75]])
     
-    new_activations, product = unittest_model.calculate_activations(
-        weight_matrix, activations_previous_layer)
+    #new_activations, product = unittest_model.calculate_activations(
+    #    X_batch, unittest_model.list_of_weight_matrices[0])
     
-    assert new_activations.shape == activations_previous_layer.shape
-    assert product.shape == activations_previous_layer.shape
-    assert new_activations[0][0] == 0.5
-    assert new_activations[0][1] == 1.0
-    assert product[0][0] == weight_matrix[0][0]
-    assert product[1][-1] == 898
+    
     
 unittest_calculate_activations()
 
@@ -204,11 +198,12 @@ def unittest_weight_update():
     assert len(result) == len(err) == len(activations)
     assert len(activations[0]) == len(result[0])
     assert len(err[0]) == len(result[0][0])
-    
+
+unittest_weight_update()
     
 def unittest_feed_forward():
     unittest_model.split_data(data.data, data.target, 0.2)
-    X_batch = unittest_model.X_train 
+    unittest_model.get_minibatch(40)
     unittest_model.initialize_weight_matrices()
     
     #activations_previous_layer = np.array([[10,6,4,2,64], [34,85,23,54,75]])
@@ -217,15 +212,15 @@ def unittest_feed_forward():
     #    weight_matrices[0], activations_previous_layer)
     
     
-    unittest_model.feed_forward(X_batch)
+    unittest_model.feed_forward()
     
     for i in range(len(unittest_model.activations)):
         assert np.max(unittest_model.activations[i]) <= 1
         assert np.min(unittest_model.activations[i]) >= -1
     
-    assert unittest_model.activations[0].shape == (56000, 3)
-    assert unittest_model.activations[1].shape == (56000, 3)
-    assert unittest_model.activations[2].shape == (56000, 10)
+    assert unittest_model.activations[0].shape == (40, 3)
+    assert unittest_model.activations[1].shape == (40, 3)
+    assert unittest_model.activations[2].shape == (40, 10)
     assert len(unittest_model.activations) == unittest_number_of_hidden_layers +1
     assert len(unittest_model.g_inputs) == unittest_number_of_hidden_layers +1
 
@@ -240,19 +235,28 @@ def unittest_softmax_output():
     assert softmax_output[1] == 0.11731
     assert softmax_output[2] == 0.866813
     
-unittest_softmax_output()
+#unittest_softmax_output()
 
 
-np.exp(output)/np.sum(output)
+def unittest_backprop():
+    unittest_model.split_data(data.data, data.target, 0.2)
+    unittest_model.initialize_weight_matrices()
+    unittest_model.get_minibatch(40)
+    unittest_model.feed_forward()    
+    unittest_model.backprop()
     
+unittest_backprop()
+    
+def unittest_one_hot():
+    
+    a = np.array([0,1,2,3,2])
+    b = unittest_model.one_hot_encoding(a)
+    assert len(b[0]) == len(np.unique(a))
+    assert len(b) == len(a)
+    for i in b:
+        assert sum(i) == 1
+    assert b[0][0] == 1
+    assert b[4][2] == 1
 
-    
-    
-    
-    
-    
-    
-    
-    
-    
+unittest_one_hot()
 

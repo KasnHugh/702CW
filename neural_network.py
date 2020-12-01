@@ -49,22 +49,27 @@ class Neural_network:
                 classes_10 = True
         
         #one hot encoding
-        self.y_test_onehot = [] 
-        vector_length = len(np.unique(self.y_train))
-        for i in self.y_train:
-            vector = np.zeros(vector_length)
-            vector[int(i)] = 1
-            self.y_test_onehot.append(vector)
-             
-        self.y_test_onehot = np.array(self.y_test_onehot)
-        
+  
+        self.y_test_onehot = self.one_hot_encoding(self.y_test)
+        self.y_train_onehot = self.one_hot_encoding(self.y_train)        
         # Normalizing input feautres
         self.X_train = self.normalise_input(self.X_train)
         self.X_test = self.normalise_input(self.X_test)
 
         
-        return self.X_train, self.X_test, self.y_train, self.y_test, self.y_test_onehot
-    
+        #return self.X_train, self.X_test, self.y_train, self.y_test, self.y_test_onehot
+
+    def one_hot_encoding(self, data):
+        
+        onehot = [] 
+        vector_length = len(np.unique(data))
+        for i in data:
+            vector = np.zeros(vector_length)
+            vector[int(i)] = 1
+            onehot.append(vector)
+             
+        return np.array(onehot)
+
     
     def normalise_input(self, data):
         normalised_data = data / np.max(data)
@@ -205,25 +210,25 @@ class Neural_network:
         return self.dsigmoid(g_input)* np.matmul(err_layer_plus_one, weight_matrix.transpose()) 
     
     def weight_update(self, err, activation):
-        weight_updater = []
+        weights = []
         for i in range(len(err)):
-            weight_updater.append(err[i] * activation[i][:,np.newaxis])
-        return weight_updater
+            weights.append(err[i] * activation[i][:,np.newaxis])
+        return weights
             
     # not yet unit tested
-    def get_minibatch(self, X_train, y_train, batch_size = 40):
+    def get_minibatch(self, batch_size):
         # Hugh: I'm not sure np.ndarray is the right way to do this but I needed to use flatten
-        batch_indicies = random.sample(range(len(X_train)), batch_size) # why have I 
-        X_batch = self.X_train[batch_indicies]
-        y_batch = self.y_train[batch_indicies]
-        return X_batch, y_batch
+        batch_indicies = random.sample(range(len(self.X_train)), batch_size) # why have I 
+        self.X_batch = self.X_train[batch_indicies]
+        self.y_batch = self.y_train_onehot[batch_indicies]
+
         
 
     
         
-    def feed_forward(self, X_batch):
+    def feed_forward(self):
         self.activations[0], self.g_inputs[0] = self.calculate_activations(
-            X_batch, self.list_of_weight_matrices[0], bias = self.bias[0]  
+            self.X_batch, self.list_of_weight_matrices[0], bias = self.bias[0]  
             )
         
         for layer in range(1, len(self.activations)):     
@@ -239,11 +244,11 @@ class Neural_network:
 #len(unittest_model.g_inputs)
 
 
-    def backprop(self, list_of_matrices):
+    def backprop(self):
 
             #input to this is already a batch    
         #H: when doing a batch g_inputs[-1] is a vactor, how does that square?
-        self.delta_err[-1] =self.dcost_function(self.y_batch, self.activations[-1], self.g_inputs[-1])
+        self.delta_err[-1] =self.dcost_function(self.activations[-1], self.y_batch, self.g_inputs[-1])
         
         #delta_err[-1] is a 1D array the length of output nodes
         for layer in range(self.number_of_hidden_layers-1, 1, -1):
@@ -260,35 +265,25 @@ class Neural_network:
             
             update = self.weight_update(self.delta_err[layer], self.activations[layer])
             
-            self.list_of_weight_matrices[layer] += self.lr * sum(update)
-
-
+            self.list_of_weight_matrices[layer] += self.lr * sum(update)/len(self.y_batch)
 
 
             
-
-       #create an error matrix
-    # TO BE DEFINED
-    def train(self, X_batch, y_batch, initial_weight_range = (-1, 1)):
-        
-        self.list_of_weight_matrices = self.initialize_weight_matrices(
-            X_batch, y_batch, initial_weight_range)
-    
-        # TBD
-        for row in X_batch: 
-            self.feed_forward(X_batch, list_of_weight_matrices)
-            error = self.cost_function(self.activations[-1])
-            self.backprop(error)               
-            
-            
-    def htrain(self, X_train, y_train, epochs):
+    def train(self, epochs, batch_size = 40):
          for epoch in epochs:
-             X, y = self.get_minibatch(X_train, y_train)
-             self.feed_forward(X, self.list_of_matrices)
-             self.backprop(self.list_of_matrices)
+             self.get_minibatch(batch_size)
+             self.feed_forward()
+             self.backprop()
             
             
-            
+    def predict(self):
+        pass
+    
+    
+    
+    def evaluate(self):
+        pass
+        
 
             
             
