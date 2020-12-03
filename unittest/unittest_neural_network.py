@@ -9,7 +9,7 @@ import numpy as np
 import load_data
 
 
-#data = load_data.load_data()
+data = load_data.load_data()
 
 
 unittest_number_of_hidden_layers = 2
@@ -203,7 +203,7 @@ unittest_weight_update()
     
 def unittest_feed_forward():
     unittest_model.split_data(data.data, data.target, 0.2)
-    unittest_model.get_minibatch(40)
+    unittest_model.get_minibatch(40, unittest_model.X_train, unittest_model.y_train_onehot)
     unittest_model.initialize_weight_matrices()
     
     #activations_previous_layer = np.array([[10,6,4,2,64], [34,85,23,54,75]])
@@ -212,7 +212,7 @@ def unittest_feed_forward():
     #    weight_matrices[0], activations_previous_layer)
     
     
-    unittest_model.feed_forward()
+    unittest_model.feed_forward(unittest_model.X_batch)
     
     for i in range(len(unittest_model.activations)):
         assert np.max(unittest_model.activations[i]) <= 1
@@ -241,8 +241,8 @@ def unittest_softmax_output():
 def unittest_backprop():
     unittest_model.split_data(data.data, data.target, 0.2)
     unittest_model.initialize_weight_matrices()
-    unittest_model.get_minibatch(40)
-    unittest_model.feed_forward()    
+    unittest_model.get_minibatch(40, unittest_model.X_train, unittest_model.y_train_onehot)
+    unittest_model.feed_forward(unittest_model.X_batch)    
     unittest_model.backprop()
     
 unittest_backprop()
@@ -260,3 +260,26 @@ def unittest_one_hot():
 
 unittest_one_hot()
 
+
+def unittest_predict():
+    number_of_datapoints = 120
+    unittest_model.batch_size = 40
+    # rows are datapoints
+    X_test = unittest_model.X_test[:number_of_datapoints, :]
+    #unittest_model.list_of_weight_matrices
+    y_pred = unittest_model.predict(X_test)
+    
+    # *10 because the last layer has 10 activations per datapoint
+    assert y_pred.shape == (number_of_datapoints, 10)
+    
+    number_of_datapoints = 130
+    unittest_model.batch_size = 40
+    # rows are datapoints
+    X_test = unittest_model.X_test[:number_of_datapoints, :]
+    #unittest_model.list_of_weight_matrices
+    y_pred = unittest_model.predict(X_test)
+    
+    # *10 because the last layer has 10 activations per datapoint
+    assert y_pred.shape == (number_of_datapoints, 10)
+    
+unittest_predict()  

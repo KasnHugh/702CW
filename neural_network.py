@@ -216,19 +216,19 @@ class Neural_network:
         return weights
             
     # not yet unit tested
-    def get_minibatch(self, batch_size):
+    def get_minibatch(self, batch_size, X_train, y_train_onehot):
         # Hugh: I'm not sure np.ndarray is the right way to do this but I needed to use flatten
         batch_indicies = random.sample(range(len(self.X_train)), batch_size) # why have I 
-        self.X_batch = self.X_train[batch_indicies]
-        self.y_batch = self.y_train_onehot[batch_indicies]
+        self.X_batch = X_train[batch_indicies]
+        self.y_batch = y_train_onehot[batch_indicies]
 
         
 
     
         
-    def feed_forward(self):
+    def feed_forward(self, X_batch):
         self.activations[0], self.g_inputs[0] = self.calculate_activations(
-            self.X_batch, self.list_of_weight_matrices[0], bias = self.bias[0]  
+            X_batch, self.list_of_weight_matrices[0], bias = self.bias[0]  
             )
         
         for layer in range(1, len(self.activations)):     
@@ -270,16 +270,38 @@ class Neural_network:
 
             
     def train(self, epochs, batch_size = 40):
-         for epoch in epochs:
-             self.get_minibatch(batch_size)
-             self.feed_forward()
-             self.backprop()
+        self.batch_size = batch_size
+        for epoch in range(epochs):
+            self.get_minibatch(batch_size, self.X_train, self.y_train_onehot)
+            self.feed_forward()
+            self.backprop()
             
             
-    def predict(self):
-        pass
-    
-    
+    def predict(self, X_test):
+        # TO DO: 
+            # run the preds through softmax
+  
+        # Here, we're not using get_minibatches because that method samples
+        # random indices 
+        y_pred = np.array([])
+        from_index = 0
+        to_index = self.batch_size
+        iteration = 0
+        while (len(y_pred) // 10) < len(X_test):
+            iteration += 1
+            # preventing indexing from going out of bounds
+            if len(X_test)-(len(y_pred)//10) < self.batch_size:
+                to_index = len(X_test)
+            X_test_subset = X_test[from_index:to_index, :]
+
+            self.feed_forward(X_test_subset)
+            y_pred = np.append(y_pred, self.activations[-1])       
+            from_index = to_index
+            to_index = from_index + self.batch_size
+            
+        # Reshaping to make comparison with y_test easier
+        y_pred_reshaped = np.reshape(y_pred, (len(y_pred)//10, 10))
+        return y_pred_reshaped
     
     def evaluate(self):
         pass
