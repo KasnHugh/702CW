@@ -76,7 +76,7 @@ class Neural_network:
         return normalised_data
         
     def softmax(self, array):
-        return np.exp(array)/np.sum(array)
+        return np.exp(array)/np.sum(np.exp(array))
     
     def initialize_weight_matrices(self, initial_weight_range = (-1, 1)):
         

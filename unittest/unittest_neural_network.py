@@ -230,12 +230,13 @@ unittest_feed_forward()
 def unittest_softmax_output():
     output = np.array([1,3,5])
     softmax_output = unittest_model.softmax(output)
+    softmax_output = np.round(softmax_output, 4)
     assert np.sum(softmax_output) == 1.00000
-    assert softmax_output[0] == 0.0158762
-    assert softmax_output[1] == 0.11731
-    assert softmax_output[2] == 0.866813
+    assert softmax_output[0] == round(0.01587624, 4)
+    assert softmax_output[1] == round(0.11731043, 4)
+    assert softmax_output[2] == round(0.86681333, 4)
     
-#unittest_softmax_output()
+unittest_softmax_output()
 
 
 def unittest_backprop():
