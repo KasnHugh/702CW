@@ -97,7 +97,7 @@ def unittest_cost_function():
     assert unittest_errors_ones == 9
     assert unittest_errors_twos == 37'''
 
-unittest_dcost_function()
+unittest_cost_function()
 
 
 def unittest_initialize_weights():
@@ -225,13 +225,15 @@ unittest_feed_forward()
         
 
 def unittest_softmax_output():
-    output = np.array([1,3,5])
-    softmax_output = unittest_model.softmax(output)
-    softmax_output = np.round(softmax_output, 4)
-    assert np.sum(softmax_output) == 1.00000
-    assert softmax_output[0] == round(0.01587624, 4)
-    assert softmax_output[1] == round(0.11731043, 4)
-    assert softmax_output[2] == round(0.86681333, 4)
+    output = np.array([[1,3,5], [4,5,6]])
+    softmax_output = unittest_model.ksoftmax(output)
+    #softmax_output = np.round(softmax_output, 4)
+    print(np.sum(softmax_output[1]))
+    assert np.sum(softmax_output[0]) == 1.00000
+    assert np.sum(softmax_output[1]) == 1.00000
+    assert softmax_output[0][0] == round(0.01587624, 4)
+    assert softmax_output[0][1] == round(0.11731043, 4)
+    assert softmax_output[0][2] == round(0.86681333, 4)
     
 unittest_softmax_output()
 
@@ -242,6 +244,7 @@ def unittest_backprop():
     unittest_model.get_minibatch(40, unittest_model.X_train, unittest_model.y_train_onehot)
     unittest_model.feed_forward(unittest_model.X_batch)    
     unittest_model.backprop()
+    unittest_model.delta_err
     
 unittest_backprop()
     
@@ -281,3 +284,8 @@ def unittest_predict():
     assert y_pred.shape == (number_of_datapoints, 10)
     
 unittest_predict()  
+
+    
+
+
+
