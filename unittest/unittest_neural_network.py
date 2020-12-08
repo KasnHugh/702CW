@@ -47,10 +47,7 @@ def unittest_dsigmoid_function():
     assert result[0][1] == 0.25    
 
 
-def unittest_dcost_function():
-    # TO DO: 
-        # Mock / stub dsigmoid
-        
+def unittest_cost_function():
 
     y_calc = np.array([[1,2,3,4,5,6,7,8,9,10],
                          [11,12,13,14,15,16,17,18,19,20],
