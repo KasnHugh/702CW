@@ -303,9 +303,13 @@ class Neural_network:
         y_pred_reshaped = np.reshape(y_pred, (len(y_pred)//10, 10))
         return y_pred_reshaped
     
-    def evaluate(self):
-        pass
-        
+    def evaluate(self, X_test):
+        y_pred = self.predict(X_test)
+        y_onehot = self.one_hot_encoding(self.y_test)
+        why = y_pred - y_onehot
+        why_squared = why*why
+        MSE = (1/len(y_pred))*np.sum(why_squared)
+        return MSE
 
             
             
