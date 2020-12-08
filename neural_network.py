@@ -310,7 +310,6 @@ class Neural_network:
         why_squared = why*why
         MSE = (1/len(y_pred))*np.sum(why_squared)
         return MSE
-
             
             
             
