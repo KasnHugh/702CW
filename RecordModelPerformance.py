@@ -4,6 +4,7 @@ Created on Wed Dec  9 19:15:23 2020
 
 @author: groes
 """
+import sys
 
 class RecordModelPerformance():
     def __init__(self, model_object, result_dict, model_name, epochs,
@@ -60,12 +61,16 @@ class RecordModelPerformance():
         A dictionary with most relevant model parameters
 
         """
+        
 
         if len(self.result_dict) == 0:
             self.result_dict = {"model_name" : [self.model_name], "epochs" : [self.epochs],
                            "batch_size" : [self.batch_size], "learning_rate" : [self.learning_rate],
                            "accuracy" : [], "criterion" : [], "optimizer" : [], "model_architecture" : [] }
         else:
+            for key in ["model_name", "epochs", "batch_size", "learning_rate", "accuracy", "criterion", "optimizer", "model_architecture"]:
+                if key not in self.result_dict:
+                    sys.exit("key " + key + " not in result_dict")
             self.result_dict["model_name"].append(self.model_name)
             self.result_dict["epochs"].append(self.epochs)
             self.result_dict["batch_size"].append(self.batch_size)
