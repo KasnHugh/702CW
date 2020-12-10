@@ -299,11 +299,13 @@ class Neural_network:
             self.backprop()
             
     def predict(self, X_test):
+
         
         train_activations = []
         empty_list = []
         for i in range(self.number_of_hidden_layers + 1): # +1 to account for the output layer
             train_activations.append(empty_list)
+
             
         g_input_activations = []
         empty_list = []
