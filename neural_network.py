@@ -52,11 +52,10 @@ class Neural_network:
         self.y_test_onehot = self.one_hot_encoding(self.y_test)
         self.y_train_onehot = self.one_hot_encoding(self.y_train)        
         # Normalizing input feautres
-        self.X_train = self.normalise_input(self.X_train)
+        #self.X_train = self.normalise_input(self.X_train)
         self.X_test = self.normalise_input(self.X_test)
 
         
-        #return self.X_train, self.X_test, self.y_train, self.y_test, self.y_test_onehot
 
     def one_hot_encoding(self, data):
         
@@ -70,9 +69,15 @@ class Neural_network:
         return np.array(onehot)
 
     
-    def normalise_input(self, data):
-        normalised_data = data / np.max(data)
-        return normalised_data
+    def normalise_input(self, X_batch):
+        Mu = sum(X_batch)/len(X_batch)
+        s1 = X_batch - Mu
+        s1 = s1*s1 + 0.0001
+        SD = np.sqrt(s1)/len(X_batch)
+        s2 = X_batch - Mu
+        normalised_X_batch = s2/SD
+        return normalised_X_batch
+
         
     def hsoftmax(self, array):
         new_array = []
@@ -197,23 +202,10 @@ class Neural_network:
         every i is an array with the activations for each node calculated with the ith datapoint
         
         y is a 1D array of target values. length = number of nodes
-
-        Parameters
-        ----------
-        y_hat : TYPE
-            DESCRIPTION.
-        y : TYPE
-            DESCRIPTION.
-
-        Returns
-        -------
-        TYPE
-            DESCRIPTION.
-
         '''
         dsigmoid_result = self.dsigmoid(g_input)
         #for this to work data_point and y need to be np.array, NOT list or tuple etc
-        return np.array(dsigmoid_result * (y_calc-y))
+        return np.array(dsigmoid_result * abs(y_calc-y))
     # * gives elementwise multiplication, - gives elementwise subtraction
     
     def dcost_hidden_layer(self, err_layer_plus_one, weight_matrix, g_input):
@@ -230,6 +222,7 @@ class Neural_network:
         # Hugh: I'm not sure np.ndarray is the right way to do this but I needed to use flatten
         batch_indicies = random.sample(range(len(self.X_train)), batch_size) # why have I 
         self.X_batch = X_train[batch_indicies]
+        self.X_batch = self.normalise_input(self.X_batch)
         self.y_batch = y_train_onehot[batch_indicies]
 
         
@@ -246,69 +239,55 @@ class Neural_network:
                 self.activations[layer-1],
                 self.list_of_weight_matrices[layer],
                 bias = self.bias[layer-1]
-                )
+              )
 
-
-            
-#for i in range(1, len(unittest_model.activations)): print(i)
-        
-#unittest_model.activations[2]
-#len(unittest_model.g_inputs)
-
+        self.activations[-1] = self.hsoftmax(self.g_inputs[-1])
+    
 
     def backprop(self):
 
-            #input to this is already a batch    
-        #H: when doing a batch g_inputs[-1] is a vactor, how does that square?
-        self.delta_err[-1] =self.dcost_function(self.activations[-1], self.y_batch, self.g_inputs[-1])
+        self.delta_err[-1] = self.dcost_function(self.activations[-1], self.y_batch, self.g_inputs[-1])
         
-        #delta_err[-1] is a 1D array the length of output nodes
         for layer in range(len(self.delta_err)-2,-1, -1):
-
-            #self.delta_err[layer] = dsigmoid(self.g_inputs[layer])* np.matmul(self.delta_err[layer+1], self.weight_matrices[layer].transpose()) 
-            #the result of the matmul is a 2D array length (datapoints, g_inputs[layer])
-            #think that both of these are the same size so its fine
             self.delta_err[layer] = self.dcost_hidden_layer(self.delta_err[layer+1], self.list_of_weight_matrices[layer+1], self.g_inputs[layer])
             
-            #weight_update = []
-            #for i in range(len(self.delta_err[layer])):
-                
-            #    weight_update.append(self.delta_err[layer][i] * self.activations[layer][i][:,np.newaxis])
-            
         for layer in range(len(self.delta_err)-1,0, -1):           
-            
-            
-            
             update = self.weight_update(self.delta_err[layer], self.activations[layer-1])
-            #Sum(update) is 16x16, should be 16*10
-            self.list_of_weight_matrices[layer] += self.lr * sum(update)/len(self.y_batch)
-            
-            
-            #this doesn't update the initial weight matrix. It doesn't work because 
-            #the using inputs not activations, unless I'm picking the wrong activation layer,
-            #which I don't think I am
+            self.list_of_weight_matrices[layer] -= self.lr * sum(update) / len(self.y_batch)
+         
         
         self.list_of_weight_matrices[0] += self.lr * sum(self.weight_update(self.delta_err[0], self.X_batch))/len(self.y_batch)
-
             
-    def train(self, epochs, batch_size = 40):
+    def train(self, epochs, batch_size = 200):
         self.batch_size = batch_size
         for epoch in range(epochs):
+            
             self.get_minibatch(batch_size, self.X_train, self.y_train_onehot)
             self.feed_forward(self.X_batch)
             self.backprop()
+            print("the accuracy for epoch {} is : {} ".format(epoch, self.accuracy(self.predict(self.X_batch), self.y_batch)))
+            
+            #accuracy_sum = 0
+            #y_pred = self.activations[-1]
+            #for i in range(len(y_pred)):
+            #    if np.argmax(y_pred[i]) == np.argmax(self.y_batch[i]):
+            #        accuracy_sum += 1
+        
+            #accuracy = accuracy_sum/len(self.y_batch)
+            #print(accuracy)
             
     def predict(self, X_test):
         
         train_activations = []
         empty_list = []
         for i in range(self.number_of_hidden_layers + 1): # +1 to account for the output layer
-            train_activations.append(empty_list)
+            train_activations.append(empty_list)  
             
         g_input_activations = []
         empty_list = []
         for i in range(self.number_of_hidden_layers + 1): # +1 to account for the output layer
             g_input_activations.append(empty_list)
+            
         
         train_activations[0], _ = self.calculate_activations(
             X_test, self.list_of_weight_matrices[0], bias = self.bias[0]  
@@ -331,38 +310,54 @@ class Neural_network:
         why_squared = why*why
         MSE = (1/len(y_pred))*np.sum(why_squared)
         return MSE
+    
+    def accuracy(self, y_pred, y_test):
+        accuracy_sum = 0
+        #y_pred = self.predict(X_test)
+        for i in range(len(y_test)):
+            if np.argmax(y_pred[i]) == np.argmax(y_test[i]):
+                accuracy_sum += 1
+    
+        accuracy = accuracy_sum/len(y_test)
+        return accuracy
+        
+        #make accuracy work for a single datapoint too
             
 ######################################           
 
-a = np.array(np.zeros(400))
-a = a.reshape(40,10) 
-a.shape       
-b = np.array(np.zeros(160)) 
-b = b.reshape(16,10)     
-b.shape 
+#a = np.array([0,1,1,1,0,0,0])
+#np.argmax(a)
+
+
+#a = np.array(np.zeros(400))
+#a = a.reshape(40,10) 
+#a.shape       
+#b = np.array(np.zeros(160)) 
+#b = b.reshape(16,10)     
+#b.shape 
             
-np.matmul(a,b.transpose()).shape            
+#np.matmul(a,b.transpose()).shape            
+
+#a = 0.9
+#b = round(a)            
+#b
+#abs(np.array([[1,2],[-3,4]]) - np.array([[1,1],[1,1]]))            
             
-            
-            
-            
-for i in range(12,-1,-1):
-    print(i)       
-            
-            
-c = np.zeros(16)
-d = np.zeros(10)
-e = d * c[:,np.newaxis]            
-print(e.shape)
-            
-            
+#for i in range(12,-1,-1):
+ #   print(i)       
             
             
+#c = np.zeros(16)
+#d = np.zeros(10)
+#e = d * c[:,np.newaxis]            
+#print(e.shape)
+
+
+#dim(1)
+       
             
-            
-            
-            
-            
+x = np.array([1,2,3]) - 3
+x            
             
             
             

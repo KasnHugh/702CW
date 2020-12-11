@@ -11,22 +11,23 @@ import neural_network as nn
 ############ Calling the functions and class methods
 mnist_dataset = load_data.load_data()
 
-model = nn.Neural_network((40, 40, 16), (1,2,1), 0.1)
-
-model.split_data(mnist_dataset.data, mnist_dataset.target, 0.3)
-
+model = nn.Neural_network((56,56, 56,10), (-0.1, 0.2 , 0, 0), 0.01)
+model.split_data(mnist_dataset.data, mnist_dataset.target, 0.2)
 model.initialize_weight_matrices()
-
-model.train(10)
-
+model.train(20)
 model.evaluate(model.X_test)
 
-model.lr
-model.list_of_weight_matrices[0].shape
-model.list_of_weight_matrices[1].shape
-model.list_of_weight_matrices[2].shape
-model.list_of_weight_matrices[3].shape
+model.accuracy(model.predict(model.X_test), model.y_test_onehot)
 
-model.activations[-2].shape
+model.feed_forward(model.X_batch)
+model.activations[-1][1]
+#network just isn't training
+model.backprop()
+model.get_
+model.evaluate(model.X_test)
 
-len(model.delta_err[1])
+model.accuracy(model.predict(model.X_test), model.y_test)
+
+len(model.y_test)
+
+print(model.delta_err[-1])
