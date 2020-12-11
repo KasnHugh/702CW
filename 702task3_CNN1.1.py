@@ -65,7 +65,9 @@ class ConvNet1(nn.Module):
         # First argument converts the input data set to a PyTorch tensor.
         # 2nd argument normalizes data, because neural networks train better when the input data is normalized so that the data ranges from -1 to 1 or 0 to 1.
         # Note, that for each input channel a mean and standard deviation must be supplied – in the MNIST case, the input data is only single channeled
-        transformer = transforms.Compose([transforms.ToTensor(), transforms.Normalize(mean=(mean,), std=(std,))])
+        transformer = transforms.Compose(
+            [transforms.ToTensor(), transforms.Normalize(mean=(mean,), std=(std,))]
+            )
 
         # MNIST dataset
         self.train_dataset = torchvision.datasets.MNIST(root=DATA_PATH, train=True, transform=transformer, download=True)
@@ -149,7 +151,19 @@ class ConvNet1(nn.Module):
                 outputs = self.forward(images)
                 loss = self.criterion(outputs, labels)
                 #loss_list.append(loss.item()) # this was in the original guide, but its not being used
-        
+                
+                print("Length of images:")
+                print(len(images))
+                print("Shape of images:")
+                print(images.shape)
+                print("Size of images:")
+                print(images.size)
+                print("Shape of labels:")
+                print(labels.shape)   
+                
+                print("Shape of outputs")
+                print(outputs.shape)
+                
                 # Backprop and perform Adam optimisation
                 self.optimizer.zero_grad()
                 ## OBS! It should not be necessary to call backward(). If this code works, try to get rid of backward
