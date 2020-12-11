@@ -12,15 +12,13 @@ import load_data
 data = load_data.load_data()
 
 
-unittest_number_of_hidden_layers = 2
-unittest_neurons_hidden_layers = np.array([3, 3]) #(16,16, 16, 16, 16, 16, 16, 16, 16, 16)
-unittest_biases = np.ones(unittest_number_of_hidden_layers)
+unittest_neurons_hidden_layers = np.array([40,40, 10]) #(16,16, 16, 16, 16, 16, 16, 16, 16, 16)
+unittest_biases = np.ones(len(unittest_neurons_hidden_layers))
 unittest_weight_range = (-1, 1)
 unittest_lr = 0.001
 
 unittest_model = nn.Neural_network(
     unittest_neurons_hidden_layers, 
-    unittest_number_of_hidden_layers, 
     unittest_biases, unittest_lr
     )
 
@@ -97,7 +95,7 @@ def unittest_cost_function():
     assert unittest_errors_ones == 9
     assert unittest_errors_twos == 37'''
 
-unittest_dcost_function()
+unittest_cost_function()
 
 
 def unittest_initialize_weights():
@@ -113,7 +111,7 @@ def unittest_initialize_weights():
     number_of_input_features = unittest_model.X_train.shape[1] #unittest_X_train.shape[1]
     
     # Testing that there is a weight matrix for each connection between layers
-    assert len(unittest_model.list_of_weight_matrices) == unittest_number_of_hidden_layers + 1
+    #assert len(unittest_model.list_of_weight_matrices) == unittest_number_of_hidden_layers + 1
     
     # Testing that the weight matrices have the correct number of weights
     assert unittest_model.list_of_weight_matrices[0].shape[1] == unittest_neurons_hidden_layers[0]
@@ -225,25 +223,37 @@ unittest_feed_forward()
         
 
 def unittest_softmax_output():
-    output = np.array([1,3,5])
-    softmax_output = unittest_model.softmax(output)
-    softmax_output = np.round(softmax_output, 4)
-    assert np.sum(softmax_output) == 1.00000
-    assert softmax_output[0] == round(0.01587624, 4)
-    assert softmax_output[1] == round(0.11731043, 4)
-    assert softmax_output[2] == round(0.86681333, 4)
+    output = np.array([[1,3,5], [4,5,6]])
+    softmax_output = unittest_model.hsoftmax(output)
+    #softmax_output = np.round(softmax_output, 4)
+    print(np.sum(softmax_output[1]))
+    assert np.sum(softmax_output[0]) == 1.00000
+    assert np.sum(softmax_output[1]) == 1.00000
+    assert softmax_output[0][0] == round(0.01587624, 4)
+    assert softmax_output[0][1] == round(0.11731043, 4)
+    assert softmax_output[0][2] == round(0.86681333, 4)
     
-unittest_softmax_output()
+#unittest_softmax_output()
 
 
 def unittest_backprop():
     unittest_model.split_data(data.data, data.target, 0.2)
     unittest_model.initialize_weight_matrices()
+    print(unittest_model.activations[-1])
+    print(unittest_model.list_of_weight_matrices[-1][0])
     unittest_model.get_minibatch(40, unittest_model.X_train, unittest_model.y_train_onehot)
-    unittest_model.feed_forward(unittest_model.X_batch)    
-    unittest_model.backprop()
+    #unittest_model.feed_forward(unittest_model.X_batch)    
+    #unittest_model.backprop()
+    #unittest_model.train(20)
+    print(unittest_model.list_of_weight_matrices[-1][0])
     
+    #for layer in range(len(unittest_model.list_of_weight_matrices)):
+     #   assert len(unittest_model.delta_err[layer]) == len(unittest_model.list_of_weight_matrices[layer])
+
+            
 unittest_backprop()
+#one epoch only changes the weights by last 4 decimal places
+
     
 def unittest_one_hot():
     
@@ -261,17 +271,22 @@ unittest_one_hot()
 
 def unittest_predict():
     number_of_datapoints = 120
-    unittest_model.batch_size = 40
+    
     # rows are datapoints
     X_test = unittest_model.X_test[:number_of_datapoints, :]
     #unittest_model.list_of_weight_matrices
     y_pred = unittest_model.predict(X_test)
+    for i in y_pred:
+        assert sum(i) > 0.99
+        assert sum(i) < 1.11
+    #would Ideally be 1 but good enough range for me
+    
+    
     
     # *10 because the last layer has 10 activations per datapoint
     assert y_pred.shape == (number_of_datapoints, 10)
     
     number_of_datapoints = 130
-    unittest_model.batch_size = 40
     # rows are datapoints
     X_test = unittest_model.X_test[:number_of_datapoints, :]
     #unittest_model.list_of_weight_matrices
@@ -281,3 +296,13 @@ def unittest_predict():
     assert y_pred.shape == (number_of_datapoints, 10)
     
 unittest_predict()  
+
+    
+def unittest_accuracy():
+    y_pred = np.array([1,2,3,4,5,6,7,8,9])
+    y_test = np.array([0,0,0,0,0,1,0,0,9])
+    assert unittest_model.accuracy(y_pred, y_test) == 1
+
+unittest_accuracy()
+
+def unittest_evaluate():

@@ -5,19 +5,29 @@ Created on Tue Nov 17 15:23:18 2020
 @author: groes
 """
 import load_data
+
 import neural_network as nn
 
 ############ Calling the functions and class methods
 mnist_dataset = load_data.load_data()
 
-mnist_dataset = load_data()
+model = nn.Neural_network((56,56, 56,10), (-0.1, 0.2 , 0, 0), 0.01)
+model.split_data(mnist_dataset.data, mnist_dataset.target, 0.2)
+model.initialize_weight_matrices()
+model.train(20)
+model.evaluate(model.X_test)
 
-model = nn.Neural_network((16,16), 2, (1,2,1))
+model.accuracy(model.predict(model.X_test), model.y_test_onehot)
 
-X_train, X_test, y_train, y_test, y_train_vectorized = model.split_data(mnist_dataset.data, mnist_dataset.target, test_size = 0.2)
+model.feed_forward(model.X_batch)
+model.activations[-1][1]
+#network just isn't training
+model.backprop()
+model.get_
+model.evaluate(model.X_test)
 
-weight_matrices = model.initialize_weight_matrices(X_train, y_train)
+model.accuracy(model.predict(model.X_test), model.y_test)
 
-activations = model.feed_forward(X_train[0], weight_matrices)
+len(model.y_test)
 
-error = model.cost_function(activations[-1], y_train_vectorized[0])
+print(model.delta_err[-1])
