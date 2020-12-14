@@ -29,7 +29,7 @@ class new_neural_network:
         parameters = {
             "layer_type" : "input",
             "bias" : bias,
-            "number_of_neurons" : number_of_neurons, # making it parameterizable such that we can test the network on XOR
+            "number_of_neurons" : number_of_neurons # making it parameterizable such that we can test the network on XOR
             }
         self.layers.append(parameters)
         
@@ -57,8 +57,6 @@ class new_neural_network:
             }
         self.layers.append(parameters)
         
-        
- 
     
     def standardise(self, X):
         return X/np.max(X)
