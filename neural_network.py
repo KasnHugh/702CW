@@ -7,8 +7,10 @@ Created on Sat Dec 12 21:04:42 2020
 from sklearn.model_selection import train_test_split
 import numpy as np
 import random
-
-#move preprocessing out of the class
+import utils
+# TO DO:
+# move preprocessing out of the class
+# amend the train() method such that it call different activations functions based on layer parameter setting
 
 
 class new_neural_network:
@@ -18,41 +20,57 @@ class new_neural_network:
         self.lr = learning_rate        
         self.bias = [np.ones(layer) for layer in self.hidden_plus_output]
 
-    
-
-    #split preprocessing from NN
-    def split_data(self, X, y, test_size):
-        self.X_train, self.X_test, self.y_train, self.y_test = train_test_split(
-                X, y, test_size = test_size)
+    # Adding methods for creating layers to make it easier to create layers 
+    # with different parameters
+    def create_input_layer(self, number_of_neurons, bias=0):
+        # Storing parameters in dictionary inspired by suggestion in here to keep
+        # logs of settings stored in json for record keeping
+        # https://stats.stackexchange.com/questions/352036/what-should-i-do-when-my-neural-network-doesnt-learn#:~:text=Too%20few%20neurons%20in%20a,%22memorize%22%20the%20training%20data
+        parameters = {
+            "layer_type" : "input",
+            "bias" : bias,
+            "number_of_neurons" : number_of_neurons, # making it parameterizable such that we can test the network on XOR
+            }
+        self.layers.append(parameters)
         
-        self.y_train_onehot = self.one_hot_encoding(self.y_train)
-        self.y_test_onehot = self.one_hot_encoding(self.y_test)        
-        #input shape is 784
-        #output shape is 10
-        self.X_train = self.X_train/255
-        self.X_test = self.X_test/255   
+    # Consider changing default bias to None if it does not work with 0
+    # but 0 is nicer for simplicity in other methods to avoid if statements
+    # (i.e. we can just add bias without checking if layer has a bias)
+    # Setting deafult activation func to relu as our experiments suggest Sigmiod  
+    # is performing poorly for the MNIST classification problem
+    def add_hidden_layer(self, number_of_neurons, activation_func="relu", bias=0):
+        parameters = {
+            "layer_type" : "hidden",
+            "bias" : bias,
+            "number_of_neurons" : number_of_neurons, 
+            "activation_func" : activation_func,
+            "weight_matrix" : self.initialize_weight_matrix(number_of_neurons)
+            }
+        self.layers.append(parameters)
 
-    def one_hot_encoding(self, data):
+    def add_output_layer(self, number_of_neurons, activation_func="softmax", bias=0):
+        parameters = {
+            "layer_type" : "output",
+            "number_of_neurons" : number_of_neurons, 
+            "activation_func" : activation_func,
+            "weight_matrix" : self.initialize_weight_matrix(number_of_neurons)
+            }
+        self.layers.append(parameters)
         
-        onehot = [] 
-        vector_length = len(np.unique(data))
-        for i in data:
-            vector = np.zeros(vector_length)
-            vector[int(i)] = 1
-            onehot.append(vector)
-             
-        return np.array(onehot)     
+        
+ 
     
     def standardise(self, X):
         return X/np.max(X)
     
-    def normalise_input(self, datapoint):
-        Mu = sum(datapoint)/len(datapoint)
-        SD = sum((datapoint-Mu)*(datapoint-Mu))/len(datapoint)
-        znorm = (datapoint - Mu)/np.sqrt(SD + 0.0001)
-        return znorm
+    # Moving normalise_input to utils.py
+    #def normalise_input(self, datapoint):
+        #Mu = sum(datapoint)/len(datapoint)
+        #SD = sum((datapoint-Mu)*(datapoint-Mu))/len(datapoint)
+        #znorm = (datapoint - Mu)/np.sqrt(SD + 0.0001)
+        #return znorm
 
-    def initialize_weight_matrices(self, initial_weight_range = (-1, 1)):
+    def initialize_weight_matrix(self, number_of_neurons, initialization_method="gaussian"):
         '''
         np.matmul(activations_ prev_layer, weight matrix)
 
@@ -61,25 +79,40 @@ class new_neural_network:
             
         changed uniform to randn
         '''
-        number_of_input_nodes = self.X_train.shape[1]
-        number_of_output_nodes = len(np.unique(self.y_train))
-        list_of_weight_matrices = []
+        
+        # If we have time, we can experiment with different ways of initializing
+        if initialization_method == "xavier":
+            pass
+            # put return inside if statement so as to not run through the remaining 
+            # if statements if condition is fulfilled 
+        if initialization_method == "0":
+            pass
+            # put return inside if statement so as to not run through the remaining 
+            # if statements if condition is fulfilled 
+        
+        return np.random.randn(number_of_neurons, self.layers[-1][number_of_neurons] + self.layers[-1]["bias"])
+        
+        
+        
+        #number_of_input_nodes = self.X_train.shape[1]
+        #number_of_output_nodes = len(np.unique(self.y_train))
+        #list_of_weight_matrices = []
         
         
         #Initialise first matrix
-        weight_matrix_first_to_hidden = np.random.randn(number_of_input_nodes, self.hidden_layers[0])
-        list_of_weight_matrices.append(weight_matrix_first_to_hidden)
+        #weight_matrix_first_to_hidden = np.random.randn(number_of_input_nodes, self.hidden_layers[0])
+        #list_of_weight_matrices.append(weight_matrix_first_to_hidden)
         
         #Initialise all matricies between hidden layers
-        for i in range(1, len(self.hidden_layers)):
-            matrix = np.random.randn(self.hidden_layers[i-1],self.hidden_layers[i])
-            list_of_weight_matrices.append(matrix)
+        #for i in range(1, len(self.hidden_layers)):
+        ##    matrix = np.random.randn(self.hidden_layers[i-1],self.hidden_layers[i])
+        #    list_of_weight_matrices.append(matrix)
         
         #initialise matrix that connects last hidden layer to output layer
-        weight_matrix_hidden_to_output = np.random.randn(self.hidden_layers[-1], number_of_output_nodes)
-        list_of_weight_matrices.append(weight_matrix_hidden_to_output)
+        #weight_matrix_hidden_to_output = np.random.randn(self.hidden_layers[-1], number_of_output_nodes)
+        #list_of_weight_matrices.append(weight_matrix_hidden_to_output)
         
-        self.list_of_weight_matrices = list_of_weight_matrices
+        #self.list_of_weight_matrices = list_of_weight_matrices
 
         
     def train(self, X, y, epochs, batch_size = 128):
@@ -223,6 +256,7 @@ class new_neural_network:
 
 
 #####################################
+# TO DO: Amend this such that it's calling util functions
 
 from sklearn.datasets import fetch_openml
 
