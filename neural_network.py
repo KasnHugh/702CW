@@ -65,8 +65,6 @@ class new_neural_network:
             }
         self.layers.append(parameters)
         
-        
- 
     
     def standardise(self, X):
         return X/np.max(X)
