@@ -14,22 +14,26 @@ import utils
 
 
 class new_neural_network:
-    def __init__(self, hidden_layers, learning_rate):
-        self.hidden_layers = hidden_layers
-        self.hidden_plus_output = hidden_layers + [10]
+    def __init__(self, learning_rate):
+        #self.hidden_layers = hidden_layers
+        #self.hidden_plus_output = hidden_layers + [10]
         self.lr = learning_rate        
-        self.bias = [np.ones(layer) for layer in self.hidden_plus_output]
+        #self.bias = [np.ones(layer) for layer in self.hidden_plus_output]
+        
+        
+        self.layers = []
 
     # Adding methods for creating layers to make it easier to create layers 
     # with different parameters
-    def create_input_layer(self, number_of_neurons, bias=0):
+    def create_input_layer(self, number_of_neurons, bias=1):
         # Storing parameters in dictionary inspired by suggestion in here to keep
         # logs of settings stored in json for record keeping
         # https://stats.stackexchange.com/questions/352036/what-should-i-do-when-my-neural-network-doesnt-learn#:~:text=Too%20few%20neurons%20in%20a,%22memorize%22%20the%20training%20data
         parameters = {
             "layer_type" : "input",
             "bias" : bias,
-            "number_of_neurons" : number_of_neurons, # making it parameterizable such that we can test the network on XOR
+            "number_of_neurons" : number_of_neurons,# making it parameterizable such that we can test the network on XOR
+            "activations" : []
             }
         self.layers.append(parameters)
         
@@ -38,22 +42,26 @@ class new_neural_network:
     # (i.e. we can just add bias without checking if layer has a bias)
     # Setting deafult activation func to relu as our experiments suggest Sigmiod  
     # is performing poorly for the MNIST classification problem
-    def add_hidden_layer(self, number_of_neurons, activation_func="relu", bias=0):
+    def add_hidden_layer(self, number_of_neurons, activation_func="relu", bias=1):
         parameters = {
             "layer_type" : "hidden",
             "bias" : bias,
             "number_of_neurons" : number_of_neurons, 
             "activation_func" : activation_func,
-            "weight_matrix" : self.initialize_weight_matrix(number_of_neurons)
+            "weight_matrix" : self.initialize_weight_matrix(number_of_neurons, self.layers[-1]),
+            "activations" : [],
+            "g_inputs" : []
             }
         self.layers.append(parameters)
 
-    def add_output_layer(self, number_of_neurons, activation_func="softmax", bias=0):
+    def add_output_layer(self, number_of_neurons, activation_func="softmax"):
         parameters = {
             "layer_type" : "output",
             "number_of_neurons" : number_of_neurons, 
             "activation_func" : activation_func,
-            "weight_matrix" : self.initialize_weight_matrix(number_of_neurons)
+            "weight_matrix" : self.initialize_weight_matrix(number_of_neurons),
+            "activations" : [],
+            "g_inputs" : []
             }
         self.layers.append(parameters)
         
@@ -89,8 +97,8 @@ class new_neural_network:
             pass
             # put return inside if statement so as to not run through the remaining 
             # if statements if condition is fulfilled 
-        
-        return np.random.randn(number_of_neurons, self.layers[-1][number_of_neurons] + self.layers[-1]["bias"])
+        #is this where bias goes?
+        return np.random.randn(number_of_neurons, self.layers[-1]["number_of_neurons"])# + self.layers[-1]["bias"])
         
         
         
@@ -113,8 +121,103 @@ class new_neural_network:
         #list_of_weight_matrices.append(weight_matrix_hidden_to_output)
         
         #self.list_of_weight_matrices = list_of_weight_matrices
+    def new_train(self, X, y, epochs, batch_size = 128, optimiser = "Adam"):
 
+
+        for epoch in epochs:
+            
+            mini_batches = self.get_minibatch(X,y, batch_size)
+            
+            for batch in mini_batches:
+                X_batch = [x for (x,y) in batch]
+                y_batch = [y for (x,y) in batch]
+                
+                
+                #Forward Pass
+                
+                for layer in range(len(self.layers)):
+                    
+                    if self.layers[layer]["layer_type"] == "input":
+                        self.layers[layer]["activations"] = X_batch
+                    
+                    else:
+                        self.layers[layer]['activations'], self.layers[layer]['g_inputs'] = self.calculate_activations(self.layers[layer-1], self.layers[layer]['weight_matrix'])
+                        
+                
+                #Backward Pass
+                
+                for layer in range((len(self.layers))-1, -1, -1):
+                    
+                    if self.layers[layer]["layer_type"] == "output":
+                        #include this in the line below
+                        self.layers[layer]['loss'] = self.get_output_loss(self.layers[layer], y_batch)
+                        
+                        self.layers[layer]['weight_update'] = self.weight_update(self.layers[layer]['loss'], self.layers[layer-1]['activations'])
+                        
+                        #This will take account of output activations eg softmax
+                    
+                    elif self.layers[layer]["layer_type"] == "input":
+                        pass
+                    
+                    else:
+                        self.layers[layer]['weight_update'] = self.backprop(self.layers[layer], self.layers[layer+1], optimiser)
+                        
+                for layer in self.layers:
+                    if layer['layer_type'] == "hidden":
+                        
+                        layer['weight_matrix'] +=layer['weight_update']
+                
+                #Do I want to clear all unneede variables at this point?
+                #for housekeeping reasons
+                
         
+                
+            accuracy = self.accuracy_score(X)
+            print("Epoch {}: accuracy = {}".format(epoch, accuracy))
+        
+    def get_minibatches(self, X, y, batch_size):
+        training_data = [n for n in zip(X,y)]        
+        random.shuffle(training_data)
+        n = len(training_data)
+        mini_batches = [training_data[k:k+batch_size] for k in range(0, n, batch_size)]
+        return mini_batches
+        
+    def calculate_activations(self, prev_layer, current_layer):
+        product = np.matmul(prev_layer['activations'], current_layer['weight_matrix']) + prev_layer['bias']
+        
+        if current_layer['activations_func'] == "sigmoid":
+            new_activations = self.sigmoid_activation_func(product)
+        elif current_layer['activations_func'] == "relu":
+            new_activations = self.relu_activation_func(product)
+        else:
+            print("sigmoid or relu, you choose")
+        
+        return new_activations, product
+    
+    def relu_activation_func(self, x):
+        return np.maximum(0, x)
+        
+    def sigmoid_activation_func(self, x):
+        #x = x.float()
+        #x = np.exp(-x)
+        #x = x + 1
+        #x = 1/x
+        sig = 1/(1 + np.exp(-x))
+        return sig        
+        
+        
+    def Adam(self, X_batch, y_batch, step_size = 0.001, rho1 = 0.9, rho2 = 0.999, stab = 10e-8):
+        s = 0
+        r = 0
+        t = 0
+        output_gradient = self.get_output_gradient(X_batch, y_batch)     
+        t += 1
+        
+        s = rho1 * s + (1 - rho1) * output_gradient
+        r = rho2 * r + (1 - rho2) * output_gradient * output_gradient #operator between grad is hadamar/elementwise operator
+
+        s_hat = 
+
     def train(self, X, y, epochs, batch_size = 128):
         self.initialize_weight_matrices()
         training_data = [n for n in zip(X,y)]
@@ -126,7 +229,7 @@ class new_neural_network:
                 x_batch = [x for (x,y) in batch]
                 y_batch = [y for (x,y) in batch]
                 batch_activations, batch_g_inputs  = self.feed_forward(x_batch)
-                self.backprop(x_batch, y_batch, batch_activations, batch_g_inputs)
+                self.SGD(x_batch, y_batch, batch_activations, batch_g_inputs)
             print("Epoch {}".format(epoch))
         
     def feed_forward(self, X_batch):
@@ -155,29 +258,9 @@ class new_neural_network:
         activations[-1] = self.hsoftmax(g_inputs[-1])        
         return activations, g_inputs
 
-    def calculate_activations(self, activations_previous_layer, weight_matrix,
-                               bias = 0, activation_func = "sigmoid"):
-        
-        product = np.matmul(activations_previous_layer, weight_matrix) + bias
-        
-        if activation_func == "sigmoid":
-            new_activations = self.sigmoid_activation_func(product)
-        else:
-            new_activations = self.relu_activation_func(product)
-        
-        return new_activations, product
+
     
-    def relu_activation_func(self, x):
-        return np.maximum(0, x)
-        
-        
-    def sigmoid_activation_func(self, x):
-        #x = x.float()
-        #x = np.exp(-x)
-        #x = x + 1
-        #x = 1/x
-        sig = 1/(1 + np.exp(-x))
-        return sig
+
 
     def hsoftmax(self, array):
         new_array = []
@@ -186,7 +269,7 @@ class new_neural_network:
         new_array = np.array(new_array)
         return new_array
     
-    def backprop(self, X_batch, y_batch, activations, g_inputs):
+    def SGD(self, X_batch, y_batch, activations, g_inputs):
         empty_list = []
         delta_err = []
         for i in range(len(self.hidden_layers) + 2): # no +2 to account for the output layer and input layer
