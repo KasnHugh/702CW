@@ -335,7 +335,10 @@ class new_neural_network:
         accuracy = accuracy_sum/len(y)
         return accuracy
 
-
+    def relu_prime(self, ginputs):
+        return np.where(x > 0, 1.0, 0.0)
+    
+    
 #####################################
 # TO DO: Amend this such that it's calling util functions
 
