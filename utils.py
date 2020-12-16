@@ -5,25 +5,13 @@ Created on Mon Dec 14 18:40:44 2020
 @author: groes
 """
 from sklearn.model_selection import train_test_split
+from sklearn.preprocessing import normalize
 import numpy as np
 
-def split_data(self, X, y, test_size, normalise=True):
+def split_data(X, y, test_size, normalise=True):
     """
     Splits and normalizes data
-
-    Parameters
-    ----------
-    X : TYPE
-        DESCRIPTION.
-    y : TYPE
-        DESCRIPTION.
-    test_size : TYPE
-        DESCRIPTION.
-
-    Returns
-    -------
-    None.
-
+    
     """
     
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size = test_size)
@@ -31,20 +19,22 @@ def split_data(self, X, y, test_size, normalise=True):
     y_test_onehot = one_hot_encoding(y_test)        
     
     if normalise:
-        X_train = np.apply_along_axis(normalise_input, 1, X_train)
-        X_test = np.apply_along_axis(normalise_input, 1, X_test)
+        X_train = normalize(X_train)
+        X_test = normalize(X_test)
+        #X_train = np.apply_along_axis(normalise_input, 1, X_train)
+        #X_test = np.apply_along_axis(normalise_input, 1, X_test)
     
-    return X_train, X_test, y_train, y_test, y_train_onehot, y_test_onehot
+    return X_train, X_test, y_train_onehot, y_test_onehot
     
 
-def normalise_input(self, datapoint):
+def normalise_input(datapoint):
     Mu = sum(datapoint)/len(datapoint)
     SD = sum((datapoint-Mu)*(datapoint-Mu))/len(datapoint)
     znorm = (datapoint - Mu)/np.sqrt(SD + 0.0001)
     return znorm
 
 
-def one_hot_encoding(self, data):
+def one_hot_encoding(data):
     onehot = [] 
     vector_length = len(np.unique(data))
     for i in data:
@@ -53,3 +43,6 @@ def one_hot_encoding(self, data):
         onehot.append(vector)
          
     return np.array(onehot)
+
+def standardise(X):
+        return X/np.max(X)

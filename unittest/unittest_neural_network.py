@@ -7,17 +7,50 @@ Created on Tue Nov 17 15:15:48 2020
 import neural_network as nn
 import numpy as np
 import load_data
-
+import utils
 
 data = load_data.load_data()
+X = data['data']
+y = [float(ye) for ye in data['target']]
+
+X_train, X_test, y_train, y_test = utils.split_data(X, y, 0.3)
+
+unittest_mod = nn.new_neural_network(0.001)
+unittest_mod.create_input_layer(784)
+#unittest_mod.add_hidden_layer(216)
+unittest_mod.add_hidden_layer(180)
+unittest_mod.add_output_layer(10)
+unittest_mod.new_train(X_train, y_train,3)
+
+unittest_mod.accuracy_score(X_test, y_test)
+
+y_test[0]
 
 
-unittest_neurons_hidden_layers = np.array([40,40, 10]) #(16,16, 16, 16, 16, 16, 16, 16, 16, 16)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+###########################################
+unittest_neurons_hidden_layers = np.array([40,40, 40]) #(16,16, 16, 16, 16, 16, 16, 16, 16, 16)
 unittest_biases = np.ones(len(unittest_neurons_hidden_layers))
 unittest_weight_range = (-1, 1)
 unittest_lr = 0.001
 
-unittest_model = nn.Neural_network(
+#unittest_model = nn.Neural_network(
     unittest_neurons_hidden_layers, 
     unittest_biases, unittest_lr
     )
@@ -257,7 +290,7 @@ unittest_backprop()
     
 def unittest_one_hot():
     
-    a = np.array([0,1,2,3,2])
+    a = np.array([[0,1,2,3,2],[3,4,5,6,7,8]])
     b = unittest_model.one_hot_encoding(a)
     assert len(b[0]) == len(np.unique(a))
     assert len(b) == len(a)
