@@ -11,16 +11,17 @@ import utils
 
 data = load_data.load_data()
 X = data['data']
-y = [float(ye) for ye in data['target']]
+y = data['target']
 
 X_train, X_test, y_train, y_test = utils.split_data(X, y, 0.3)
 
 unittest_mod = nn.new_neural_network(0.001)
 unittest_mod.create_input_layer(784)
-#unittest_mod.add_hidden_layer(216)
-unittest_mod.add_hidden_layer(180)
+unittest_mod.add_hidden_layer(256)
+#unittest_mod.add_hidden_layer(256)
+#unittest_mod.add_hidden_layer(128)
 unittest_mod.add_output_layer(10)
-unittest_mod.new_train(X_train, y_train,3)
+unittest_mod.new_train(X_train, y_train,3,batch_size = 32)
 
 unittest_mod.accuracy_score(X_test, y_test)
 

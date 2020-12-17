@@ -7,7 +7,7 @@ Created on Sat Dec 12 21:04:42 2020
 #from sklearn.model_selection import train_test_split
 import numpy as np
 import random
-from sklearn.metrics import accuracy_score
+#from sklearn.metrics import accuracy_score
 #import utils
 # TO DO:
 # move preprocessing out of the class
@@ -26,7 +26,7 @@ class new_neural_network:
 
     # Adding methods for creating layers to make it easier to create layers 
     # with different parameters
-    def create_input_layer(self, number_of_neurons, bias=0.01):
+    def create_input_layer(self, number_of_neurons, bias=0.0001):
         # Storing parameters in dictionary inspired by suggestion in here to keep
         # logs of settings stored in json for record keeping
         # https://stats.stackexchange.com/questions/352036/what-should-i-do-when-my-neural-network-doesnt-learn#:~:text=Too%20few%20neurons%20in%20a,%22memorize%22%20the%20training%20data
@@ -44,7 +44,7 @@ class new_neural_network:
     # (i.e. we can just add bias without checking if layer has a bias)
     # Setting deafult activation func to relu as our experiments suggest Sigmiod  
     # is performing poorly for the MNIST classification problem
-    def add_hidden_layer(self, number_of_neurons, activation_func="relu", bias=0.01):
+    def add_hidden_layer(self, number_of_neurons, activation_func="relu", bias=0.0001):
         parameters = {
             "layer_type" : "hidden",
             "bias" : bias,
@@ -92,18 +92,20 @@ class new_neural_network:
         
         
     def new_train(self, X, y, epochs, batch_size = 128, optimiser = "Adam"):
+        print("Training Started")
         for epoch in range(epochs):
             
             mini_batches = self.get_minibatches(X,y, batch_size)           
             for batch in mini_batches:
                 X_batch = [x for (x,y) in batch]
                 y_batch = [y for (x,y) in batch]
-                
+                #print("forward pass started")
                 self.forward_pass(X_batch)
+                #print("backward pass started")
                 self.backward_pass(y_batch, optimiser)
             
             self.forward_pass(X)                
-            accuracy = accuracy_score(self.layers[-1]['activations'], y)
+            accuracy = self.accuracy_score(X, y)
             xent = self.xent(self.layers[-1]['activations'], y)
             print("Epoch {}: loss {}, accuracy = {}".format(epoch,xent, accuracy))
 
@@ -124,14 +126,15 @@ class new_neural_network:
                 self.layers[layer]['activations'], self.layers[layer]['g_inputs'] = self.calculate_activations(self.layers[layer-1], self.layers[layer])
          
     def backward_pass(self, y_batch, optimiser):
+        #calculating the weight and bias updates
         for layer in range((len(self.layers))-1, -1, -1):
                     
             #output
             if self.layers[layer]["layer_type"] == "output":
                 #include this in the line below
-                self.layers[layer]['delta'] = (self.layers[layer]['activations'] - y_batch)
+                self.layers[layer]['delta'] = (self.layers[layer]['activations'] - y_batch) #xent
                 if optimiser == "SGD":
-                    self.layers[layer]['weight_update'] = - self.lr * sum(self.xent_prime_softmax(self.layers[layer], y_batch, self.layers[layer-1]))     
+                    self.layers[layer]['weight_update'] = - self.lr * sum(self.weight_update((self.layers[layer]['activations'] - y_batch),  self.layers[layer-1]['activations']))     
                 elif optimiser == "Adam":
                     self.layers[layer]['weight_update'] = - self.lr * self.Adam(self.layers[layer], self.layers[layer-1])
              #input      
@@ -149,7 +152,7 @@ class new_neural_network:
                 self.layers[layer]['bias_update'] = - sum(self.layers[layer+1]['delta'])
                     
                     
-            #update weights and bias    
+        #adding weights and bias to their updates    
         for layer in range(len(self.layers)-1):
             if self.layers[layer]["layer_type"] == "input":
                 self.layers[layer]['bias'] += self.layers[layer]['bias_update']
@@ -195,9 +198,9 @@ class new_neural_network:
 
     
     #################################################################    
-    def xent_prime_softmax(self, output_layer, y_batch, last_hidden_layer):
-        #doing something that might be wrong
-        return self.weight_update((output_layer['activations'] - y_batch), last_hidden_layer['activations'])
+   # def xent_prime_softmax(self, output_layer, y_batch, last_hidden_layer):
+    #    #doing something that might be wrong
+     #   return self.weight_update((output_layer['activations'] - y_batch), last_hidden_layer['activations'])
     
     def Adam(self, current_layer, previous_layer, rho1 = 0.9, rho2 = 0.999, stab = 10e-8):
         gradient = self.SGD(current_layer, previous_layer)
@@ -252,16 +255,16 @@ class new_neural_network:
     def xent(self, output_layer, y_batch):
         return - sum(y_batch * np.log(output_layer))/len(y_batch)
     
-    #def accuracy_score(self,X, y):
-     #   self.forward_pass(X)
-      #  y_predicted = self.layers[-1]['activations']
-      #  accuracy_sum = 0
-       # for datapoint in range(len(y)):
-        #    if np.argmax(y[datapoint]) == np.argmax(y_predicted[datapoint]):
-         #       accuracy_sum += 1
+    def accuracy_score(self,X, y):
+        self.forward_pass(X)
+        y_predicted = self.layers[-1]['activations']
+        accuracy_sum = 0
+        for datapoint in range(len(y)):
+            if np.argmax(y[datapoint]) == np.argmax(y_predicted[datapoint]):
+                accuracy_sum += 1
         
-       # accuracy = accuracy_sum/len(y)
-        #return accuracy*100
+        accuracy = accuracy_sum/len(y)
+        return accuracy*100
     
     
     
@@ -287,7 +290,7 @@ class old_NN():
             # put return inside if statement so as to not run through the remaining 
             # if statements if condition is fulfilled 
         #is this where bias goes?
-        return np.random.randn(number_of_neurons, self.layers[-1]["number_of_neurons"])# + self.layers[-1]["bias"])
+        return np.random.uniform(-1, 1, (number_of_neurons, self.layers[-1]["number_of_neurons"]))# + self.layers[-1]["bias"])
         
         
         
@@ -550,4 +553,6 @@ class old_NN():
    # else:
     #    0
 #signe(np.array([-1,0,1]))
+
+np.maximum(0, np.array([[-1,-3,2,0],[1,0,1,0]]))
 
