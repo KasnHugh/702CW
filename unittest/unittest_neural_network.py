@@ -13,6 +13,7 @@ data = load_data.load_data()
 X = data['data']
 y = data['target']
 
+
 X_train, X_test, y_train, y_test = utils.split_data(X, y, 0.3)
 
 unittest_mod = nn.new_neural_network(0.001)

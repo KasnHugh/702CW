@@ -7,7 +7,6 @@ Created on Sat Dec 12 21:04:42 2020
 #from sklearn.model_selection import train_test_split
 import numpy as np
 import random
-#from sklearn.metrics import accuracy_score
 #import utils
 # TO DO:
 # move preprocessing out of the class
@@ -89,8 +88,7 @@ class new_neural_network:
             # if statements if condition is fulfilled 
         #is this where bias goes?
         return np.random.randn(self.layers[-1]["number_of_neurons"],number_of_neurons)# + self.layers[-1]["bias"])
-        
-        
+
     def new_train(self, X, y, epochs, batch_size = 128, optimiser = "Adam"):
         print("Training Started")
         for epoch in range(epochs):
@@ -99,6 +97,7 @@ class new_neural_network:
             for batch in mini_batches:
                 X_batch = [x for (x,y) in batch]
                 y_batch = [y for (x,y) in batch]
+
                 #print("forward pass started")
                 self.forward_pass(X_batch)
                 #print("backward pass started")
@@ -126,6 +125,7 @@ class new_neural_network:
                 self.layers[layer]['activations'], self.layers[layer]['g_inputs'] = self.calculate_activations(self.layers[layer-1], self.layers[layer])
          
     def backward_pass(self, y_batch, optimiser):
+
         #calculating the weight and bias updates
         for layer in range((len(self.layers))-1, -1, -1):
                     
@@ -152,6 +152,7 @@ class new_neural_network:
                 self.layers[layer]['bias_update'] = - sum(self.layers[layer+1]['delta'])
                     
                     
+
         #adding weights and bias to their updates    
         for layer in range(len(self.layers)-1):
             if self.layers[layer]["layer_type"] == "input":
@@ -255,6 +256,7 @@ class new_neural_network:
     def xent(self, output_layer, y_batch):
         return - sum(y_batch * np.log(output_layer))/len(y_batch)
     
+
     def accuracy_score(self,X, y):
         self.forward_pass(X)
         y_predicted = self.layers[-1]['activations']
@@ -290,7 +292,9 @@ class old_NN():
             # put return inside if statement so as to not run through the remaining 
             # if statements if condition is fulfilled 
         #is this where bias goes?
+
         return np.random.uniform(-1, 1, (number_of_neurons, self.layers[-1]["number_of_neurons"]))# + self.layers[-1]["bias"])
+
         
         
         
@@ -435,7 +439,10 @@ class old_NN():
         accuracy = accuracy_sum/len(y)
         return accuracy
 
-
+    def relu_prime(self, ginputs):
+        return np.where(x > 0, 1.0, 0.0)
+    
+    
 #####################################
 # TO DO: Amend this such that it's calling util functions
 
