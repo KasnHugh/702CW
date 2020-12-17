@@ -50,7 +50,7 @@ def create_kfold_sets(df, k):
 # 0 = no balcony, 1 = possibility of building balcony, 2 = balcony
 # We'll use this as in ordered variable, not categorical, as balcony is better,
 # therefore larger, than no balcony
-def add_balcony_variable(df):
+def add_balcony_variable(df, no_balcony_value, balcony_possibility_value, balcony_value):
     #home_type_column_index = df.columns.get_loc("Home_type")
     #description_column_index = df.columns.get_loc("description_of_home")
 
@@ -88,7 +88,7 @@ def test_create_balcony_variable():
     test_df["description_of_home"] = test_description
     #test_balcony_variable = create_balcony_variable(test_df, 0, 1)
     #print(test_balcony_variable)
-    test_df = add_balcony_variable(test_df)
+    test_df = add_balcony_variable(test_df, 0, 1, 2)
     assert test_df["balcony"][0] == 0 #[0, 0, 2, 1, 0]    
     assert test_df["balcony"][1] == 0
     assert test_df["balcony"][2] == 2
@@ -114,11 +114,6 @@ def make_floor_int(df):
     df["floor_as_int"] = floor_as_int
     return df #floor_as_int
 
-def unittest_make_floor_int():
-    df = pd.read_csv("df_all_data_w_desc_2020-12-14.csv")
-    df = make_floor_int(df)
-    assert "floor_as_int" in df.columns
-unittest_make_floor_int()
 
 
 
@@ -210,19 +205,7 @@ def add_zip_code_variable(df, threshold=0.01):
     
     return df
 
-def unittest_add_zip_code_variable():
-    df = pd.read_csv("df_all_data_w_desc_2020-12-14.csv")
-    df_zips = add_zip_code_variable(df)
-    raised = False
-    for zipcode in df_zips["zipcodes"]:
-        assert len(zipcode) == 4
-        try:
-            int(zipcode)
-        except:
-            raised = True
-    assert raised == False
-    
-unittest_add_zip_code_variable()
+
 
 def make_m2_price(df):
     df["m2_price"] = df.list_price_dkk / df.home_size_m2
@@ -230,16 +213,33 @@ def make_m2_price(df):
 
 
     
-def enrich_dataset(df):
+def enrich_dataset(df, no_balcony_value, balcony_possibility_value, balcony_value):
     """
     Wrapper for the methods that engineers new features
 
     """
-    df = add_balcony_variable(df)
+    df = add_balcony_variable(df, no_balcony_value, balcony_possibility_value, balcony_value)
     df = make_floor_int(df)
     df = add_zip_code_variable(df)
     df = make_m2_price(df)
     return df
+    
+def add_neighboorhood_avg_m2_price(df):
+    grouped_df = df.groupby("zipcodes")
+    mean_df = grouped_df.mean()
+    mean_df = mean_df.reset_index()
+    zipcode_avg_m2_price = []
+    for i in range(len(df)):
+        #print(i)
+        zipcode = df["zipcodes"][i]
+        #print("zipcode")
+        #print(zipcode)
+        index = mean_df.index[mean_df["zipcodes"] == zipcode] #mean_df["zipcodes"].index(zipcode)
+        avg_price = float(mean_df.iloc[index, -1])
+        #print(avg_price)
+        zipcode_avg_m2_price.append(avg_price)
+    df["zipcode_avg_m2_price"] = zipcode_avg_m2_price
+    return df 
     
     
 
