@@ -293,6 +293,90 @@ def run_nn(epochs, X_train, X_test, y_train, y_test, model_settings):
     return model_settings
     
 
+##############################################################################
+####------------- IMPLEMENTING LINEAR REGRESSION MODEL -------------------####
+##############################################################################
+
+def run_lin_reg(lin_reg_epochs, X_train, X_test, y_train, y_test, model_settings):
+    #### Converting datasets to pytorch tensors
+    model_settings["lin_reg_epochs"] = lin_reg_epochs
+    
+    #training_dataset = MPD.MakePytorchData(X_train, y_train)
+    #train_loader = DataLoader(dataset=training_dataset, batch_size=batchsize, shuffle=True)
+    
+   
+    # Defining model
+    linear_regression_model = nn.Linear(in_features=30, out_features=1)
+    criterion_lin_reg = nn.MSELoss()
+    model_settings["criterion_lin_reg"] = criterion_lin_reg
+    optimizer_lin_reg = torch.optim.SGD(params=linear_regression_model.parameters(), lr=learningrate)
+    model_settings["lin_reg_optimizer"] = optimizer_lin_reg
+    
+    # Preparing data
+    X_lin_reg = torch.from_numpy(X_train.values).float()
+    y_lin_reg = torch.from_numpy(y_train.values).float()
+    y_lin_reg = y_lin_reg.view(1476, 1)
+    
+    # Training
+    for epoch in range(lin_reg_epochs):
+        y_pred = linear_regression_model(X_lin_reg)
+        print(y_pred)
+        loss = criterion_lin_reg(y_pred, y_lin_reg)
+        loss.backward()
+        optimizer_lin_reg.step()
+        optimizer_lin_reg.zero_grad()
+
+        
+    test_dataset = MPD.MakePytorchData(X_test, y_test)
+    test_loader = DataLoader(dataset=test_dataset, batch_size=batchsize, shuffle=True)
+    
+    # Testing 
+    # SOURCE: r2 code adopted from https://pytorch.org/ignite/_modules/ignite/contrib/metrics/regression/r2_score.html
+    linear_regression_model.eval()
+    #y_pred = []
+    #y_true = []
+    #sum_of_errors = 0
+    #y_sum = 0
+    #y_sq_sum = 0
+    num_datapoints = 0
+    #tss = 0
+    #rss = 0
+    loss_lin_reg = 0
+    iterations = 0
+    with torch.no_grad():
+        for inputs, labels in test_loader:
+            iterations += 1
+            num_datapoints += len(inputs)
+            #print("num_datapoints")
+            #print(num_datapoints)
+            # train is being called when test() is run, so I'm amending the code below to see if it has any effects
+            #print(labels)
+            outputs_lin_reg = linear_regression_model(inputs)
+            
+            #y_pred = outputs
+            #y_pred_shape = y_pred.shape[0]
+            #y_pred = y_pred.view(y_pred_shape)
+            #print("y_pred size")
+            #print(y_pred.shape)
+            #y_true = labels
+            #print("y_true size:")
+            #print(y_true.shape)
+            #print(y_true)
+            loss = criterion_lin_reg(outputs_lin_reg, labels)
+            loss_lin_reg += loss.item()
+            print("loss in loop:")
+            print(loss_lin_reg)
+        final_loss_lin_reg = loss_lin_reg / iterations
+        print("Final loss is: {} ".format(final_loss_lin_reg))
+        model_settings["loss_lin_reg"] = final_loss_lin_reg
+            #tss += torch.sum(torch.pow(y_true - torch.mean(y_true), 2))
+            #rss += torch.sum(torch.pow(y_true - y_pred, 2))
+        #r2 = 1 - (rss / tss)
+        #print("r2 norm is: {}".format(r2))
+    
+    return model_settings
+
+
 
 
 
@@ -318,7 +402,7 @@ feature_scaling = "normalise" # should either be "standardise" or "normalise"
 no_balcony_value = 0 # to be used in creating a variable reflecting whether the home has a balcony
 balcony_possibility_value = 2 # to be used in creating a variable reflecting whether the home has a balcony
 balcony_value = 5 # to be used in creating a variable reflecting whether the home has a balcony
-
+epochs_lin_reg = 10
 
 # Generating data
 X_train, X_test, y_train, y_test, model_specs = data_preprocessing(exclude_cooperative_dwellings,
@@ -335,9 +419,11 @@ X_train, X_test, y_train, y_test, model_specs = data_preprocessing(exclude_coope
 # Running experiments
 model_specs["Experiment"] = "changing variable names inside nets to rule out the possibility that one net is using the other nets settings"
 
+lin_reg_model_spec = run_lin_reg(epochs_lin_reg, X_train, X_test, y_train, y_test, model_specs)
 
-nn_model_spec = run_nn(epochs_nn, X_train, X_test, y_train, y_test, model_specs)
+nn_model_specs = run_nn(epochs_nn, X_train, X_test, y_train, y_test, lin_reg_model_spec)
 
 print(model_specs)
 
 overview_of_models.append(model_specs)
+
