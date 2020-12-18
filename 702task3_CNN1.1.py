@@ -20,6 +20,7 @@ import sys
 import json
 from pytorchtools import EarlyStopping
 from torch.utils.data.sampler import SubsetRandomSampler
+from pytorchtools import EarlyStopping
 
 ######### Following: https://adventuresinmachinelearning.com/convolutional-neural-networks-tutorial-in-pytorch/
 
@@ -60,19 +61,19 @@ class ConvNet1(nn.Module):
         self.fc1 = nn.Linear(7 * 7 * 64, 1000)
         self.fc2 = nn.Linear(1000, 10)
         
-    def initialize_data(self, DATA_PATH, mean=0.1307, std=0.3081):
+    #def initialize_data(self, DATA_PATH, mean=0.1307, std=0.3081):
         # transforms to apply to the data
         # First argument converts the input data set to a PyTorch tensor.
         # 2nd argument normalizes data, because neural networks train better when the input data is normalized so that the data ranges from -1 to 1 or 0 to 1.
         # Note, that for each input channel a mean and standard deviation must be supplied – in the MNIST case, the input data is only single channeled
-        transformer = transforms.Compose(
-            [transforms.ToTensor(), transforms.Normalize(mean=(mean,), std=(std,))]
-            )
+     #   transformer = transforms.Compose(
+      #      [transforms.ToTensor(), transforms.Normalize(mean=(mean,), std=(std,))]
+      #      )
 
         # MNIST dataset
-        self.train_dataset = torchvision.datasets.MNIST(root=DATA_PATH, train=True, transform=transformer, download=True)
-        self.test_dataset = torchvision.datasets.MNIST(root=DATA_PATH, train=False, transform=transformer)
-        print("Dataset saved to: " + DATA_PATH)
+       # self.train_dataset = torchvision.datasets.MNIST(root=DATA_PATH, train=True, transform=transformer, download=True)
+       # self.test_dataset = torchvision.datasets.MNIST(root=DATA_PATH, train=False, transform=transformer)
+       # print("Dataset saved to: " + DATA_PATH)
         
         
     
@@ -87,8 +88,8 @@ class ConvNet1(nn.Module):
         
 
         
-    def train(self, num_epochs = 5, batch_size = 100, learning_rate = 0.001, DATA_PATH='./new_data', patience = 20):
-        self.initialize_data(DATA_PATH) # where to save data
+    def train(self, training_data, num_epochs = 5, batch_size = 100, learning_rate = 0.001, patience = 20):
+        #self.initialize_data(DATA_PATH) # where to save data
         self.batch_size = batch_size
         # Setup a transform to apply to the MNIST data, and also the data set variables:
         
@@ -107,7 +108,7 @@ class ConvNet1(nn.Module):
         #validation_sampler = SubsetRandomSampler(validation_idx)
         
         # WITHOUT EARLY STOPPING:
-        train_loader = DataLoader(dataset=self.train_dataset,
+        train_loader = DataLoader(dataset=training_data,
                                   batch_size=batch_size,
                                   shuffle=True)
         # WITH EARLY STOPPING:
@@ -152,17 +153,17 @@ class ConvNet1(nn.Module):
                 loss = self.criterion(outputs, labels)
                 #loss_list.append(loss.item()) # this was in the original guide, but its not being used
                 
-                print("Length of images:")
-                print(len(images))
-                print("Shape of images:")
-                print(images.shape)
-                print("Size of images:")
-                print(images.size)
-                print("Shape of labels:")
-                print(labels.shape)   
+                #print("Length of images:")
+                #print(len(images))
+                #print("Shape of images:")
+                #print(images.shape)
+                #print("Size of images:")
+                #print(images.size)
+                #print("Shape of labels:")
+                #print(labels.shape)   
                 
-                print("Shape of outputs")
-                print(outputs.shape)
+                #print("Shape of outputs")
+                #print(outputs.shape)
                 
                 # Backprop and perform Adam optimisation
                 self.optimizer.zero_grad()
@@ -197,15 +198,17 @@ class ConvNet1(nn.Module):
             #    continue_training = False
         
         
-    def test(self):
-        test_loader = DataLoader(dataset=self.test_dataset, batch_size=self.batch_size, shuffle=False)
-
+    def test(self, test_data):
+        print("Starting test")
+        test_loader = DataLoader(dataset=test_data, batch_size=self.batch_size, shuffle=False)
+        print("Test loader created")
         # Testing the model      
-        self.eval()
+        #self.eval()
         with torch.no_grad():
             correct = 0
             total = 0
             for images, labels in test_loader:
+                print("Running batch")
                 # train is being called when test() is run, so I'm amending the code below to see if it has any effects
                 outputs = self.forward(images) # model(images)
                 _, predicted = torch.max(outputs.data, 1)
@@ -220,10 +223,19 @@ class ConvNet1(nn.Module):
         
 
 
-###### Calling the model         
+###### Calling the model
+mean=0.1307
+std=0.3081
+DATA_PATH='./new_data'  
+transformer = transforms.Compose([transforms.ToTensor(),
+                                  transforms.Normalize(mean=(mean,), std=(std,))])   
+
+train_dataset = torchvision.datasets.MNIST(root=DATA_PATH, train=True, transform=transformer, download=True)
+test_dataset = torchvision.datasets.MNIST(root=DATA_PATH, train=False, transform=transformer)
+
 model = ConvNet1() 
-model.train(num_epochs=1)
-test_accuracy = model.test()
+model.train(train_dataset, num_epochs=1)
+test_accuracy = model.test(test_dataset)
 print(test_accuracy)
 
 # Training and recording model performance
