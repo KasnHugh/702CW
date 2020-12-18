@@ -4,24 +4,15 @@ Created on Sat Dec 12 21:04:42 2020
 
 @author: hugha
 """
-#from sklearn.model_selection import train_test_split
 import numpy as np
 import random
-#from sklearn.metrics import accuracy_score
 #import utils
-# TO DO:
-# move preprocessing out of the class
-# amend the train() method such that it call different activations functions based on layer parameter setting
+
 
 
 class new_neural_network:
     def __init__(self, learning_rate):
-        #self.hidden_layers = hidden_layers
-        #self.hidden_plus_output = hidden_layers + [10]
         self.lr = learning_rate        
-        #self.bias = [np.ones(layer) for layer in self.hidden_plus_output]
-        
-        
         self.layers = []
 
     # Adding methods for creating layers to make it easier to create layers 
@@ -35,15 +26,11 @@ class new_neural_network:
             "bias" : bias,
             "number_of_neurons" : number_of_neurons,# making it parameterizable such that we can test the network on XOR
             "activations" : [],
-            "bias_update" : []
+            "bias_update" : [],
+            "stored_bias" : []
             }
         self.layers.append(parameters)
         
-    # Consider changing default bias to None if it does not work with 0
-    # but 0 is nicer for simplicity in other methods to avoid if statements
-    # (i.e. we can just add bias without checking if layer has a bias)
-    # Setting deafult activation func to relu as our experiments suggest Sigmiod  
-    # is performing poorly for the MNIST classification problem
     def add_hidden_layer(self, number_of_neurons, activation_func="relu", bias=0.0001):
         parameters = {
             "layer_type" : "hidden",
@@ -57,7 +44,9 @@ class new_neural_network:
             "r" : 0,
             "delta" : [],
             "weight_update" : [],
-            "bias_update" : []
+            "bias_update" : [],
+            "stored_weights" : [],
+            "stored_bias" : []
             }
         self.layers.append(parameters)
 
@@ -72,29 +61,23 @@ class new_neural_network:
             "s" : 0,
             "r" : 0,
             "delta" : [],
-            "weight_update" : []
+            "weight_update" : [],
+            "stored_weights" : [],
+            "stored_bias" : []
             }
         self.layers.append(parameters)
 
-    def initialize_weight_matrix(self, number_of_neurons, initialization_method="gaussian"):
-
-        # If we have time, we can experiment with different ways of initializing
-        if initialization_method == "xavier":
-            pass
-            # put return inside if statement so as to not run through the remaining 
-            # if statements if condition is fulfilled 
-        if initialization_method == "0":
-            pass
-            # put return inside if statement so as to not run through the remaining 
-            # if statements if condition is fulfilled 
-        #is this where bias goes?
+    def initialize_weight_matrix(self, number_of_neurons):
         return np.random.uniform(-1,1,(self.layers[-1]["number_of_neurons"],number_of_neurons))
         
         
-    def new_train(self, X, y, epochs, batch_size = 128, optimiser = "Adam"):
+    def new_train(self, X, y, epochs, batch_size = 128, optimiser = "Adam", tolerance = 0.5, max_patience = 3, stopping_criterion = "xent"):
         print("Training Started")
-        for epoch in range(epochs):
-            
+        stop_crit_prev = 0
+        patience = 0
+        epoch = 1
+        #epochs and no improvement stopper
+        while epoch <= epochs and patience < max_patience:  
             mini_batches = self.get_minibatches(X,y, batch_size)           
             for batch in mini_batches:
                 X_batch = [x for (x,y) in batch]
@@ -104,11 +87,55 @@ class new_neural_network:
                 #print("backward pass started")
                 self.backward_pass(y_batch, optimiser)
             
-            self.forward_pass(X)                
-            accuracy = self.accuracy_score(X, y)
+            
+            #calculate cross entropy loss
+            self.forward_pass(X)
             xent = self.xent(self.layers[-1]['activations'], y)
+            
+            #calculate accuracy on a portion of training data  
+            accuracy_batches = self.get_minibatches(X,y,round(len(X)*0.2) )
+            accuracy_X_batch = [x for (x,y) in accuracy_batches[0]]
+            accuracy_y_batch = [y for (x,y) in accuracy_batches[0]]
+            accuracy = self.accuracy_score(accuracy_X_batch, accuracy_y_batch)
+            
+            #gives option of stopping criterion
+            if stopping_criterion == "xent":
+                xent_mean = sum(xent)/len(xent)
+                stop_crit = xent_mean
+            elif stopping_criterion == "accuracy": 
+                stop_crit = accuracy
+            else:
+                print("xent or accuracy, you choose")  
+                
+            if abs(stop_crit - stop_crit_prev)<tolerance:
+                if patience == 0:
+                    #stores weights before they overfit
+                    for layer in self.layers:
+                        if layer['layer_type'] == "input":
+                            layer["stored_bias"] = layer["bias"]
+                        elif layer['layer_type'] == "output":
+                            layer["stored_weights"] = layer["weight_matrix"]
+                        else:
+                            layer["stored_bias"] = layer["bias"]
+                            layer["stored_weights"] = layer["weight_matrix"]
+                #returns matrices to their pre over-fitting peak           
+                if patience == max_patience-1:
+                    for layer in self.layers:
+                        if layer['layer_type'] == "input":
+                            layer["bias"] = layer["stored_bias"]
+                        elif layer['layer_type'] == "output":
+                            layer["weight_matrix"] = layer["stored_weights"]
+                        else:
+                            layer["bias"] = layer["stored_bias"]
+                            layer["weight_matrix"] = layer["stored_weights"]                                   
+                patience +=1
+            else:
+                patience = 0
+                             
+            stop_crit_prev = stop_crit
+             
             print("Epoch {}: loss {}, accuracy = {}".format(epoch,xent, accuracy))
-
+            epoch +=1
         
     def get_minibatches(self, X, y, batch_size):
         training_data = [n for n in zip(X,y)]        
@@ -163,7 +190,7 @@ class new_neural_network:
                 self.layers[layer]['bias'] += self.layers[layer]['bias_update']
     
     #################################################################
-    #current_layer_weight_matrix, current_layer_activation_function, prev_layer_activations, prev_layer_bias
+
     def calculate_activations(self, prev_layer, current_layer):
         product = np.matmul(prev_layer['activations'], current_layer['weight_matrix']) + prev_layer['bias']
         
@@ -182,10 +209,6 @@ class new_neural_network:
         return np.maximum(0, x)
         
     def sigmoid_activation_func(self, x):
-        #x = x.float()
-        #x = np.exp(-x)
-        #x = x + 1
-        #x = 1/x
         sig = 1/(1 + np.exp(-x))
         return sig    
     
@@ -198,10 +221,8 @@ class new_neural_network:
 
     
     #################################################################    
-   # def xent_prime_softmax(self, output_layer, y_batch, last_hidden_layer):
-    #    #doing something that might be wrong
-     #   return self.weight_update((output_layer['activations'] - y_batch), last_hidden_layer['activations'])
-    
+
+    #Adam
     def Adam(self, current_layer, previous_layer, rho1 = 0.9, rho2 = 0.999, stab = 10e-8):
         gradient = self.SGD(current_layer, previous_layer)
         #I don't know why the t is here or what it does
@@ -215,13 +236,14 @@ class new_neural_network:
         update = s_hat / (r_hat ** 0.5 + stab)
         
         return update
-    
+    #Stochastic Gradient Descent
     def SGD(self, current_layer, prev_layer):
         weights = []
         for i in range(len(current_layer['delta'])):
             weights.append(current_layer['delta'][i] * prev_layer['activations'][i][:,np.newaxis])
         return sum(weights) / len(weights)
-
+    
+    #backpropogates the cost to the layer-1
     def cost_prime_hidden(self, current_layer,layer_after):
         return np.array(self.activation_prime(current_layer)* np.matmul(layer_after['delta'], layer_after['weight_matrix'].transpose()))
 
@@ -245,13 +267,14 @@ class new_neural_network:
     
     ####################################################################
     #Check that these work for correct size dims
-    
+    #Mean Squared Error
     def MSE(self, output_layer, y_batch):
         why = output_layer['activations'] - y_batch
         why_squared = why*why
         MSE = (1/len(y_batch))*np.sum(why_squared)
         return MSE
     
+    #Cross Entropy
     def xent(self, output_layer, y_batch):
         return - sum(y_batch * np.log(output_layer))/len(y_batch)
     
