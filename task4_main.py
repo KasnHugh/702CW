@@ -4,6 +4,7 @@ Created on Mon Dec 14 21:22:59 2020
 
 @author: groes
 """
+#Test comment
 import task4_data as t4
 #import neural_network as nn
 import pandas as pd
@@ -426,4 +427,3 @@ nn_model_specs = run_nn(epochs_nn, X_train, X_test, y_train, y_test, lin_reg_mod
 print(model_specs)
 
 overview_of_models.append(model_specs)
-
