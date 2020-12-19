@@ -7,13 +7,15 @@ Created on Sat Dec 12 21:04:42 2020
 import numpy as np
 import random
 #import utils
-
-
+from sklearn.metrics import confusion_matrix
+import matplotlib.pyplot as plt
+import seaborn as sns; sns.set()
 
 class new_neural_network:
     def __init__(self, learning_rate):
         self.lr = learning_rate        
         self.layers = []
+
 
     # Adding methods for creating layers to make it easier to create layers 
     # with different parameters
@@ -71,14 +73,20 @@ class new_neural_network:
         return np.random.uniform(-1,1,(self.layers[-1]["number_of_neurons"],number_of_neurons))
         
         
-    def new_train(self, X, y, epochs, batch_size = 128, optimiser = "Adam", tolerance = 0.5, max_patience = 3, stopping_criterion = "xent"):
+    def new_train(self, X_train, X_val, y_train, y_val, epochs, batch_size = 128, optimiser = "Adam", tolerance = 0.01, max_patience = 10, stopping_criterion = "xent"):
         print("Training Started")
-        stop_crit_prev = 0
+        stop_crit_prev = 1
         patience = 0
         epoch = 1
+        
+        val_xent_list = []
+        train_xent_list = []
+        val_accuracy_list = []
+        train_accuracy_list =[]
+        
         #epochs and no improvement stopper
         while epoch <= epochs and patience < max_patience:  
-            mini_batches = self.get_minibatches(X,y, batch_size)           
+            mini_batches = self.get_minibatches(X_train,y_train, batch_size)           
             for batch in mini_batches:
                 X_batch = [x for (x,y) in batch]
                 y_batch = [y for (x,y) in batch]
@@ -86,24 +94,36 @@ class new_neural_network:
                 self.forward_pass(X_batch)
                 #print("backward pass started")
                 self.backward_pass(y_batch, optimiser)
-            
-            
-            #calculate cross entropy loss
-            self.forward_pass(X)
-            xent = self.xent(self.layers[-1]['activations'], y)
-            
+ 
             #calculate accuracy on a portion of training data  
-            accuracy_batches = self.get_minibatches(X,y,round(len(X)*0.2) )
-            accuracy_X_batch = [x for (x,y) in accuracy_batches[0]]
-            accuracy_y_batch = [y for (x,y) in accuracy_batches[0]]
-            accuracy = self.accuracy_score(accuracy_X_batch, accuracy_y_batch)
+            train_batches = self.get_minibatches(X_train,y_train,round(len(X_train)*0.2) )
+            train_X_batch = [x for (x,y) in train_batches[0]]
+            train_y_batch = [y for (x,y) in train_batches[0]]
+            
+            #validation set accuracy
+            val_accuracy = self.accuracy_score(X_val, y_val)
+            val_accuracy_list.append(val_accuracy)
+            
+            #training set accuracy
+            train_accuracy = self.accuracy_score(train_X_batch, train_y_batch)            
+            train_accuracy_list.append(train_accuracy)
+            
+            #validate set cross entropy
+            self.forward_pass(X_val)
+            val_xent = self.xent(self.layers[-1]['activations'], y_val)
+            val_xent_list.append(sum(val_xent)/len(val_xent))
+            #training set cross entropy
+            self.forward_pass(X_train)
+            train_xent = self.xent(self.layers[-1]['activations'], y_train)
+            train_xent_list.append(sum(train_xent)/len(train_xent))
+
             
             #gives option of stopping criterion
             if stopping_criterion == "xent":
-                xent_mean = sum(xent)/len(xent)
+                xent_mean = sum(val_xent)/len(val_xent)
                 stop_crit = xent_mean
             elif stopping_criterion == "accuracy": 
-                stop_crit = accuracy
+                stop_crit = val_accuracy
             else:
                 print("xent or accuracy, you choose")  
                 
@@ -118,6 +138,8 @@ class new_neural_network:
                         else:
                             layer["stored_bias"] = layer["bias"]
                             layer["stored_weights"] = layer["weight_matrix"]
+                         
+                        
                 #returns matrices to their pre over-fitting peak           
                 if patience == max_patience-1:
                     for layer in self.layers:
@@ -132,10 +154,21 @@ class new_neural_network:
             else:
                 patience = 0
                              
-            stop_crit_prev = stop_crit
+            stop_crit_prev = stop_crit 
              
-            print("Epoch {}: loss {}, accuracy = {}".format(epoch,xent, accuracy))
+            print("Epoch {}: loss {}, accuracy = {}".format(epoch,val_xent, val_accuracy))
             epoch +=1
+        fig = plt.figure()
+        fig.add_subplot(2,2,1)
+        plt.plot(range(epoch-1), val_accuracy_list, label = 'validation')
+        plt.plot(range(epoch-1), train_accuracy_list, label = 'training')
+        plt.xlabel('Accuracy over epochs')
+        
+        fig.add_subplot(2,2,3)
+        plt.plot(range(epoch-1), val_xent_list, label = 'validation')
+        plt.plot(range(epoch-1), train_xent_list, label = 'training')
+        plt.xlabel('Cross Entropy over epochs')
+        fig.show()
         
     def get_minibatches(self, X, y, batch_size):
         training_data = [n for n in zip(X,y)]        
@@ -278,14 +311,29 @@ class new_neural_network:
     def xent(self, output_layer, y_batch):
         return - sum(y_batch * np.log(output_layer))/len(y_batch)
     
-    def accuracy_score(self,X, y):
+    def accuracy_score(self,X, y, cm = False):
         self.forward_pass(X)
         y_predicted = self.layers[-1]['activations']
         accuracy_sum = 0
+        y_pred_arg = []
+        y_arg = []
         for datapoint in range(len(y)):
             if np.argmax(y[datapoint]) == np.argmax(y_predicted[datapoint]):
+                
+                
                 accuracy_sum += 1
+            y_pred_arg.append(np.argmax(y_predicted[datapoint]))
+            y_arg.append(np.argmax(y[datapoint]))
         
+        if cm == True:
+        
+            mat = confusion_matrix(y_pred_arg, y_arg)
+            sns.heatmap(mat.T, square=True, annot=True, fmt='d', cbar=False,
+                        xticklabels=range(10),
+                        yticklabels=range(10))
+            plt.xlabel('true label')
+            plt.ylabel('predicted label')
+            plt.show()
+
         accuracy = accuracy_sum/len(y)
         return accuracy*100
-    
