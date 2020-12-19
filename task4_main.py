@@ -38,16 +38,19 @@ import pytorch_dataset as MPD # class for creating pytorch datasets for task 4
 ##############################################################################
 def data_preprocessing(exclude_cooperative_dwellings, columns_to_use, test_size,
                        batchsize, epochs, learningrate, feature_scaling,
-                       no_balcony_value, balcony_possibility_value, balcony_value):
+                       no_balcony_value, balcony_possibility_value, balcony_value,
+                       experiment):
 
     model_settings = {
-        "test_size" : test_size,
-        "batchsize_nn" : batchsize,
-        "epochs_nn" : epochs,
-        "learning_rate" : learningrate,
-        "feature_scaling" : feature_scaling,
-        "no_balcony_value" : no_balcony_value,
-        "balcony_possibility_value" : balcony_possibility_value
+        "experiment" : experiment,
+        "test_size" : [test_size],
+        "batchsize_nn" : [batchsize],
+        "epochs_nn" : [epochs],
+        "learning_rate" : [learningrate],
+        "feature_scaling" : [feature_scaling],
+        "balcony_value" : [balcony_value],
+        "no_balcony_value" : [no_balcony_value],
+        "balcony_possibility_value" : [balcony_possibility_value]
         }
     
     #############
@@ -154,7 +157,7 @@ def data_preprocessing(exclude_cooperative_dwellings, columns_to_use, test_size,
     
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=test_size, random_state=101)
     
-    return X_train, X_test, y_train, y_test, model_settings
+    return X_train, X_test, y_train, y_test, model_settings, df
 
 
 
@@ -166,14 +169,14 @@ def run_nn(epochs, X_train, X_test, y_train, y_test, model_settings):
     class FFN(nn.Module):
         def __init__(self):
             super(FFN, self).__init__()
-            self.linear1 = nn.Linear(30, 50) 
+            self.linear1 = nn.Linear(X_train.shape[1], 50) 
             self.linear2 = nn.Linear(50, 50)
             self.linear3 = nn.Linear(50, 50)
             self.linear4 = nn.Linear(50, 50)
             self.linear5 = nn.Linear(50, 50)
             self.linear6 = nn.Linear(50, 40)
             self.final_linear = nn.Linear(40, 1) 
-            self.activation = nn.ReLU() #nn.Sigmoid() #nn.ReLU()
+            self.activation = nn.Sigmoid() #nn.Sigmoid() #nn.ReLU()
             
         def forward(self, inputs):
             #x = inputs.view(-1, 28*28)
@@ -184,6 +187,11 @@ def run_nn(epochs, X_train, X_test, y_train, y_test, model_settings):
             x = self.activation(self.linear4(x))
             x = self.activation(self.linear5(x))
             x = self.activation(self.linear6(x))
+            #x = self.activation(self.linear7(x))
+            #x = self.activation(self.linear8(x))
+            #x = self.activation(self.linear9(x))
+            #x = self.activation(self.linear10(x))
+            #x = self.activation(self.linear11(x))
             x = self.final_linear(x)
             return x
     
@@ -280,7 +288,7 @@ def run_nn(epochs, X_train, X_test, y_train, y_test, model_settings):
             loss = nn_criterion(y_pred, labels)
             loss_nn += loss.item()
             print("LOSS in loop:")
-            print(loss_nn)
+            print(loss.item())
             #tss += torch.sum(torch.pow(y_true - torch.mean(y_true), 2))
             #rss += torch.sum(torch.pow(y_true - y_pred, 2))
         final_loss_nn = loss_nn / iterations
@@ -302,26 +310,38 @@ def run_lin_reg(lin_reg_epochs, X_train, X_test, y_train, y_test, model_settings
     #### Converting datasets to pytorch tensors
     model_settings["lin_reg_epochs"] = lin_reg_epochs
     
-    #training_dataset = MPD.MakePytorchData(X_train, y_train)
-    #train_loader = DataLoader(dataset=training_dataset, batch_size=batchsize, shuffle=True)
+    ## Adding early stopping
+    # obtain training indices that will be used for validation
+    #valid_size = 0.2
+    #num_train = len(X_train)
+    #indices = list(range(num_train))
+    #np.random.shuffle(indices)
+    #split = int(np.floor(valid_size * num_train))
+    #train_idx, valid_idx = indices[split:], indices[:split]
     
    
     # Defining model
-    linear_regression_model = nn.Linear(in_features=30, out_features=1)
+    linear_regression_model = nn.Linear(in_features=X_train.shape[1], out_features=1)
     criterion_lin_reg = nn.MSELoss()
     model_settings["criterion_lin_reg"] = criterion_lin_reg
     optimizer_lin_reg = torch.optim.SGD(params=linear_regression_model.parameters(), lr=learningrate)
     model_settings["lin_reg_optimizer"] = optimizer_lin_reg
     
     # Preparing data
+    print("TRAINING:")
     X_lin_reg = torch.from_numpy(X_train.values).float()
+    print("shape of x")
+    print(X_lin_reg.shape)
     y_lin_reg = torch.from_numpy(y_train.values).float()
-    y_lin_reg = y_lin_reg.view(1476, 1)
-    
+    y_lin_reg = y_lin_reg.view(X_train.shape[0], 1)
+    print("shape of y")
+    print(y_lin_reg.shape)
     # Training
     for epoch in range(lin_reg_epochs):
         y_pred = linear_regression_model(X_lin_reg)
+        # Shape of output data
         print(y_pred)
+        print(y_pred.shape)
         loss = criterion_lin_reg(y_pred, y_lin_reg)
         loss.backward()
         optimizer_lin_reg.step()
@@ -332,6 +352,7 @@ def run_lin_reg(lin_reg_epochs, X_train, X_test, y_train, y_test, model_settings
     test_loader = DataLoader(dataset=test_dataset, batch_size=batchsize, shuffle=True)
     
     # Testing 
+    print("TESTING:")
     # SOURCE: r2 code adopted from https://pytorch.org/ignite/_modules/ignite/contrib/metrics/regression/r2_score.html
     linear_regression_model.eval()
     #y_pred = []
@@ -346,6 +367,10 @@ def run_lin_reg(lin_reg_epochs, X_train, X_test, y_train, y_test, model_settings
     iterations = 0
     with torch.no_grad():
         for inputs, labels in test_loader:
+            print("Inputs shape")
+            print(inputs.shape)
+            print("Labels shape")
+            print(labels.shape)
             iterations += 1
             num_datapoints += len(inputs)
             #print("num_datapoints")
@@ -353,7 +378,11 @@ def run_lin_reg(lin_reg_epochs, X_train, X_test, y_train, y_test, model_settings
             # train is being called when test() is run, so I'm amending the code below to see if it has any effects
             #print(labels)
             outputs_lin_reg = linear_regression_model(inputs)
-            
+            print("Outputs_lin_reg shape")
+            print(outputs_lin_reg.shape[0])
+            outputs_lin_reg = outputs_lin_reg.view(outputs_lin_reg.shape[0])
+            print("Outputs_lin_reg shape after transformation")
+            print(outputs_lin_reg.shape)
             #y_pred = outputs
             #y_pred_shape = y_pred.shape[0]
             #y_pred = y_pred.view(y_pred_shape)
@@ -366,7 +395,7 @@ def run_lin_reg(lin_reg_epochs, X_train, X_test, y_train, y_test, model_settings
             loss = criterion_lin_reg(outputs_lin_reg, labels)
             loss_lin_reg += loss.item()
             print("loss in loop:")
-            print(loss_lin_reg)
+            print(loss.item())
         final_loss_lin_reg = loss_lin_reg / iterations
         print("Final loss is: {} ".format(final_loss_lin_reg))
         model_settings["loss_lin_reg"] = final_loss_lin_reg
@@ -390,23 +419,25 @@ def run_lin_reg(lin_reg_epochs, X_train, X_test, y_train, y_test, model_settings
 
 
 # Settings
-exclude_cooperative_dwellings = False
+exclude_cooperative_dwellings = True
 columns_to_use = ["Home_type", "rooms", "home_size_m2", "built_year",
                   "lotsize_m2", "expenses_dkk", "floor_as_int", "balcony",
                   "zipcodes", "m2_price"]
 test_size = 0.3
 batchsize = 40
-epochs_nn = 10
+epochs_nn = 5
 learningrate = 0.001
 feature_scaling = "normalise" # should either be "standardise" or "normalise"
 
 no_balcony_value = 0 # to be used in creating a variable reflecting whether the home has a balcony
 balcony_possibility_value = 2 # to be used in creating a variable reflecting whether the home has a balcony
 balcony_value = 5 # to be used in creating a variable reflecting whether the home has a balcony
-epochs_lin_reg = 10
+epochs_lin_reg = epochs_nn
+
+experiment = "increased number of layers in nn and more nodes"
 
 # Generating data
-X_train, X_test, y_train, y_test, model_specs = data_preprocessing(exclude_cooperative_dwellings,
+X_train, X_test, y_train, y_test, model_specs, df = data_preprocessing(exclude_cooperative_dwellings,
                                                                    columns_to_use,
                                                                    test_size,
                                                                    batchsize,
@@ -415,15 +446,49 @@ X_train, X_test, y_train, y_test, model_specs = data_preprocessing(exclude_coope
                                                                    feature_scaling,
                                                                    no_balcony_value,
                                                                    balcony_possibility_value,
-                                                                   balcony_value)
+                                                                   balcony_value,
+                                                                   experiment)
 
 # Running experiments
-model_specs["Experiment"] = "changing variable names inside nets to rule out the possibility that one net is using the other nets settings"
+"""
 
 lin_reg_model_spec = run_lin_reg(epochs_lin_reg, X_train, X_test, y_train, y_test, model_specs)
-
 nn_model_specs = run_nn(epochs_nn, X_train, X_test, y_train, y_test, lin_reg_model_spec)
 
-print(model_specs)
+lin_reg_df = pd.DataFrame.from_dict(data=lin_reg_model_spec)
+nn_df = pd.DataFrame.from_dict(data=nn_model_specs)
 
-overview_of_models.append(model_specs)
+all_results = pd.concat([all_results, lin_reg_df, nn_df])
+
+all_results.to_excel("task4_experimentation_results.xlsx")
+
+all_results_no_duplicates = all_results.drop_duplicates(keep="first")
+
+descr_stats_loss_nn = all_results_no_duplicates["loss_nn"].describe()
+descr_stats_loss_lin_reg = all_results_no_duplicates["loss_lin_reg"].describe()
+descr_stats_all = pd.DataFrame()
+
+
+### Plotting m2 price against home size
+import seaborn as sns
+from matplotlib import pyplot as plt
+
+# All data
+_, _, _, _, _, df = data_preprocessing(exclude_cooperative_dwellings,
+                                        columns_to_use,
+                                        test_size,
+                                        batchsize,
+                                        epochs_nn,
+                                        learningrate,
+                                        feature_scaling,
+                                        no_balcony_value,
+                                        balcony_possibility_value,
+                                        balcony_value,
+                                        experiment)
+
+
+ax = sns.lineplot(x="home_size_m2", y="m2_price", data=df)
+
+
+plt.scatter(x="rooms", y="m2_price", data=df)
+"""
