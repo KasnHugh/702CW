@@ -236,8 +236,8 @@ def test(model, test_loader):
 model = ConvNet1() 
 
 batch_size = 256
-n_epochs = 1
-patience = 1 # BEST: 20
+n_epochs = 100
+patience = 20 # BEST: 20
 activation_func = "relu"
 learningrate = 0.001
 train_loader, test_loader, valid_loader = create_datasets(batch_size)
