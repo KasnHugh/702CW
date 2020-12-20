@@ -1,13 +1,5 @@
 # 702CW
 
-•	The group member details (if applicable)
-•	Their project abstract or very short description 
-•	Description about structure of code (code and data file locations) 
-•	How to run the code ( main file name etc) 
-•	Any output of the code (especially in the case of any graphs/plots etc, if they have)
-•	Location/link to the data 
-•	Also mention the github account in their reports so that we can quickly browse the correct submission.
-
 Group members:
 Kasper Groes Ludvigsen, kasper.ludvigsen@city.ac.uk
 Hugh Adams, hugh.adams@city.ac.uk
