@@ -243,38 +243,6 @@ def add_neighboorhood_avg_m2_price(df):
     
     
 
-
-#testdf = copy.copy(df)
-#testdf_floorint = make_floor_int(testdf)
-
-#testdf["Home_type"][2229]
-#testdf_floorint.dtypes["Floor_as_int"]    
-#floor = int(df["floor"][0][0])
-#floor[0]
-###### Calling the functions
-#df_all_homes = pd.read_csv("df_all_data_w_desc_2020-12-14.csv")
-#df_all_homes = df_all_homes.applymap(str)
-#df_all_homes = df_all_homes.applymap(str.lower)
-        
-#balcony_variable = create_balcony_variable(df_all_homes, 3, 12) 
-
-#df_all_homes["balcony_new"] = balcony_variable
-'''
-testlist = [1, 2]
-testlist2 = []
-for i in testlist: 
-    if i == 1:
-        testlist2.append("It was one")
-        continue
-    if i == 1:
-        testlist2.append("It did not work")
-    if i == 2: 
-        testlist2.append("it was 2")
-        continue
-    else: 
-        print("Fuck")
-
-
 # INVESTIGATING WHICH WORDS ARE USUALLY AROUND "ALTAN" (Danish for "balcony")
 def get_words_surrounding_altan(df):
     description_column_index = df.columns.get_loc("description_of_home")
@@ -301,58 +269,6 @@ def get_words_surrounding_altan(df):
                 list_of_mulighed_for_altan.append(text_surrounding_altan)
     
     return list_of_text_surrounding_altan, list_of_mulighed_for_altan
-
-
-
-###################### CALLING FUNCTIONS #####################################
-df = pd.read_csv("df_all_data_w_desc_2020-12-14.csv")
-
-list_of_text_surrounding_altan, list_of_mulighed_for_altan = get_words_surrounding_altan(df)
-print(list_of_text_surrounding_altan)         
-print(list_of_mulighed_for_altan)
-
-
-########## Playing around
-from sklearn import datasets
-
-iris = datasets.load_iris()
-iris["data"]
-
-
-######## RANDOM STUFF I MAY NEED ############
-# Filtering based on value of cell in column
-df_all_homes.loc[df_all_homes.zip_code_town == "2000 Frederiksberg"]
-# The same query but showing only the column "rooms"
-df_all_homes.loc[df_all_homes.zip_code_town == "2000 Frederiksberg", "rooms"]
-# iloc separates based on integer positions - what row do you want, what columns do you want
-df_all_homes.iloc[2, [1, 2]]
-#
-
-df_all_homes.columns[0]
-
-df_all_homes[''].values
-df_all_homes.iloc[:, 4].values
-df_all_homes["rooms"].values
-
-
-
-
-
-cancer = datasets.load_breast_cancer()
-cancer["feature_names"]
-
-columns=np.append(cancer['feature_names'],['target'])
-columns
-
-
-df = pd.DataFrame(data=np.c_[cancer['data'],cancer['target']],
-                  columns=np.append(cancer['feature_names'],['target']))
-
-
-
-
-
-'''
 
 
 
