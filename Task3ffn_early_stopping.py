@@ -203,7 +203,6 @@ def test(model, test_loader):
             total = 0
             for images, labels in test_loader:
                 all_labels.append(labels)
-                print("Running batch")
                 # train is being called when test() is run, so I'm amending the code below to see if it has any effects
                 outputs = model.forward(images) # model(images)
                 _, predicted = torch.max(outputs.data, 1)
