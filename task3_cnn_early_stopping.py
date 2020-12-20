@@ -91,6 +91,8 @@ def create_datasets(batch_size):
 ##############################################################################
 
 class ConvNet1(nn.Module):
+    # Adapted from
+    # https://adventuresinmachinelearning.com/convolutional-neural-networks-tutorial-in-pytorch/
     def __init__(self):
         super(ConvNet1, self).__init__()
         #  First, we create layer 1 (self.layer1) by creating a nn.Sequential object. 
