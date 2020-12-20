@@ -53,10 +53,7 @@ def data_preprocessing(exclude_cooperative_dwellings, columns_to_use, test_size,
         "balcony_possibility_value" : [balcony_possibility_value]
         }
     
-    #############
-    # TO DO:
-        # Experiment with the effect on accuracy of excluding homes of type "andelsbolig" (cooperative dwellings)  - turn on/off with parameter?
-    
+      
     df = pd.read_csv("df_all_data_w_desc_2020-12-14.csv")
     
     # Removing cooperative dwellings
@@ -93,7 +90,7 @@ def data_preprocessing(exclude_cooperative_dwellings, columns_to_use, test_size,
     row_has_NaN = is_NaN.any(axis=1)
     rows_with_NaN = df[row_has_NaN]
     
-    # Removing nans
+    # Replacing nans
     for index in df.index:
         if math.isnan(df.loc[index, "rooms"]):
             if df.loc[index, "home_size_m2"] < 40:
@@ -201,104 +198,45 @@ def run_nn(epochs, X_train, X_test, y_train, y_test, model_settings):
     
     model = FFN()
     model_settings["model_spec_nn"] = model
-    nn_criterion = nn.MSELoss() #nn.MSELoss() #nn.CrossEntropyLoss()
+    nn_criterion = nn.MSELoss()
     model_settings["nn_criterion"] = nn_criterion
     optimizer_nn = torch.optim.SGD(params=model.parameters(), lr=learningrate)
     model_settings["nn_optimizer"] = optimizer_nn
     
-    n_iterations = 0
-    
-
-    #total_step = len(training_dataset)
     for epoch in range(epochs):
-        print("epoch:")
-        print(epoch)
+
         for i, (inputs, labels) in enumerate(train_loader):
             
-            # The model currently doesnt work when using MSE loss. The two lines below are part of solving that problem. Read more:
-                # https://stackoverflow.com/questions/62383595/pytorch-mse-how-can-i-change-the-shape-of-tensor
-            #ones = torch.sparse.torch.eye(10).to(device)  # number of class class
-            #labels = ones.index_select(0, labels)
-            
-            #print("shape of inputs")
-            #print(inputs.shape)
-            #print(inputs)
-            #print("shape of labels")
-            #print(labels.shape)
-            #print(labels)
+            # Changing dimensions of output so it matches labels
             outputs_nn = model(inputs)
-            #print("shape of output")
-            #print(output.shape)
-            
+            outputs_nn_shape = outputs_nn.shape[0]
+            outputs_nn = outputs_nn.view(outputs_nn_shape)
+        
             model.zero_grad()
             loss_nn = nn_criterion(outputs_nn, labels)
             loss_nn.backward() 
             
             optimizer_nn.step()
             
-            n_iterations += 1
-            print(n_iterations)
-            
-            #total = labels.size(0)
-            #_, predicted = torch.max(output.data, 1)
-            #print("predicted")
-            #print(predicted)
-            #print("shape of predicted")
-            #print(predicted.shape)
-            #correct = (predicted == labels).sum().item()
-    
-    
-            #if (i + 1) % 100 == 0:
-            #    print('Epoch [{}/{}], Step [{}/{}], Loss: {:.4f}, Accuracy: {:.2f}%'
-            #          .format(epoch + 1, epochs, i + 1, total_step, loss.item(),
-            #                  (correct / total) * 100))
-    
-    
     test_dataset = MPD.MakePytorchData(X_test, y_test)
     test_loader = DataLoader(dataset=test_dataset, batch_size=batchsize, shuffle=True)
        
     model.eval()
-    #sum_of_errors = 0
-    #y_sum = 0
-    #y_sq_sum = 0
-    num_datapoints = 0
-    #tss = 0
-    #rss = 0
     loss_nn = 0
     iterations = 0
     with torch.no_grad():
         for inputs, labels in test_loader:
             iterations += 1
-            num_datapoints += len(inputs)
-            #print("num_datapoints")
-            #print(num_datapoints)
-            # train is being called when test() is run, so I'm amending the code below to see if it has any effects
-            #print(labels)
             outputs = model.forward(inputs)
-            
             y_pred = outputs
             y_pred_shape = y_pred.shape[0]
             y_pred = y_pred.view(y_pred_shape)
-            #print("y_pred size")
-            #print(y_pred.shape)
-            #y_true = labels
-            #print("y_true size:")
-            #print(y_true.shape)
-            #print(y_true)
             loss = nn_criterion(y_pred, labels)
             loss_nn += loss.item()
-            print("LOSS in loop:")
-            print(loss.item())
-            #tss += torch.sum(torch.pow(y_true - torch.mean(y_true), 2))
-            #rss += torch.sum(torch.pow(y_true - y_pred, 2))
         final_loss_nn = loss_nn / iterations
         print("Final loss is: {} ".format(final_loss_nn))
         model_settings["loss_nn"] = final_loss_nn
-    
-        #r2 = 1 - (rss / tss)
-        #print("r2 norm is: {}".format(r2))
-    
-    
+      
     return model_settings
     
 
@@ -310,16 +248,6 @@ def run_lin_reg(lin_reg_epochs, X_train, X_test, y_train, y_test, model_settings
     #### Converting datasets to pytorch tensors
     model_settings["lin_reg_epochs"] = lin_reg_epochs
     
-    ## Adding early stopping
-    # obtain training indices that will be used for validation
-    #valid_size = 0.2
-    #num_train = len(X_train)
-    #indices = list(range(num_train))
-    #np.random.shuffle(indices)
-    #split = int(np.floor(valid_size * num_train))
-    #train_idx, valid_idx = indices[split:], indices[:split]
-    
-   
     # Defining model
     linear_regression_model = nn.Linear(in_features=X_train.shape[1], out_features=1)
     criterion_lin_reg = nn.MSELoss()
@@ -328,85 +256,42 @@ def run_lin_reg(lin_reg_epochs, X_train, X_test, y_train, y_test, model_settings
     model_settings["lin_reg_optimizer"] = optimizer_lin_reg
     
     # Preparing data
-    print("TRAINING:")
+
     X_lin_reg = torch.from_numpy(X_train.values).float()
-    print("shape of x")
-    print(X_lin_reg.shape)
+
     y_lin_reg = torch.from_numpy(y_train.values).float()
     y_lin_reg = y_lin_reg.view(X_train.shape[0], 1)
-    print("shape of y")
-    print(y_lin_reg.shape)
+
     # Training
     for epoch in range(lin_reg_epochs):
         y_pred = linear_regression_model(X_lin_reg)
-        # Shape of output data
-        print(y_pred)
-        print(y_pred.shape)
         loss = criterion_lin_reg(y_pred, y_lin_reg)
         loss.backward()
         optimizer_lin_reg.step()
         optimizer_lin_reg.zero_grad()
 
-        
     test_dataset = MPD.MakePytorchData(X_test, y_test)
     test_loader = DataLoader(dataset=test_dataset, batch_size=batchsize, shuffle=True)
     
     # Testing 
     print("TESTING:")
-    # SOURCE: r2 code adopted from https://pytorch.org/ignite/_modules/ignite/contrib/metrics/regression/r2_score.html
     linear_regression_model.eval()
-    #y_pred = []
-    #y_true = []
-    #sum_of_errors = 0
-    #y_sum = 0
-    #y_sq_sum = 0
     num_datapoints = 0
-    #tss = 0
-    #rss = 0
     loss_lin_reg = 0
     iterations = 0
     with torch.no_grad():
         for inputs, labels in test_loader:
-            print("Inputs shape")
-            print(inputs.shape)
-            print("Labels shape")
-            print(labels.shape)
             iterations += 1
             num_datapoints += len(inputs)
-            #print("num_datapoints")
-            #print(num_datapoints)
-            # train is being called when test() is run, so I'm amending the code below to see if it has any effects
-            #print(labels)
             outputs_lin_reg = linear_regression_model(inputs)
-            print("Outputs_lin_reg shape")
-            print(outputs_lin_reg.shape[0])
             outputs_lin_reg = outputs_lin_reg.view(outputs_lin_reg.shape[0])
-            print("Outputs_lin_reg shape after transformation")
-            print(outputs_lin_reg.shape)
-            #y_pred = outputs
-            #y_pred_shape = y_pred.shape[0]
-            #y_pred = y_pred.view(y_pred_shape)
-            #print("y_pred size")
-            #print(y_pred.shape)
-            #y_true = labels
-            #print("y_true size:")
-            #print(y_true.shape)
-            #print(y_true)
             loss = criterion_lin_reg(outputs_lin_reg, labels)
             loss_lin_reg += loss.item()
-            print("loss in loop:")
-            print(loss.item())
         final_loss_lin_reg = loss_lin_reg / iterations
         print("Final loss is: {} ".format(final_loss_lin_reg))
         model_settings["loss_lin_reg"] = final_loss_lin_reg
-            #tss += torch.sum(torch.pow(y_true - torch.mean(y_true), 2))
-            #rss += torch.sum(torch.pow(y_true - y_pred, 2))
-        #r2 = 1 - (rss / tss)
-        #print("r2 norm is: {}".format(r2))
     
     return model_settings
-
-
 
 
 
@@ -419,7 +304,7 @@ columns_to_use = ["Home_type", "rooms", "home_size_m2", "built_year",
                   "zipcodes", "m2_price"]
 test_size = 0.3
 batchsize = 40
-epochs_nn = 5
+epochs_nn = 1
 learningrate = 0.001
 feature_scaling = "normalise" # should either be "standardise" or "normalise"
 
@@ -444,7 +329,6 @@ X_train, X_test, y_train, y_test, model_specs, df = data_preprocessing(exclude_c
                                                                    experiment)
 
 # Running experiments
-
 
 lin_reg_model_spec = run_lin_reg(epochs_lin_reg, X_train, X_test, y_train, y_test, model_specs)
 nn_model_specs = run_nn(epochs_nn, X_train, X_test, y_train, y_test, lin_reg_model_spec)
