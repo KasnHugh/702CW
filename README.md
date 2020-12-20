@@ -47,7 +47,11 @@ utils.py
       This file should not be run. It contains a range of helper functions used across tasks.
 pytorch_dataset.py
       This file should not be run. It contains a method used for converting the data in task 4 to Pytorch compatible format
+
 RecordModelPerformance.py
       This file should not be run. It contains a method used for recording model configuration and performance during experiments
+      
+Boliga_scraper
+      This folder contains the script used to scrape data about homes for sale
       
 Various other files including png, xlsx etc should not be considered as the most important plots etc. are found in the report. 
