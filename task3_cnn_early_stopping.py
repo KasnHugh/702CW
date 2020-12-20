@@ -272,7 +272,7 @@ test_accuracy, all_predicted, all_labels = test(model, test_loader)
 
 ##### MAKING AND PLOTTING CONFUSION MATRIX
 confus_matrix = utils.generate_confusion_matrix(all_predicted, all_labels)
-utils.plot_confusion_matrix(confus_matrix, [0,1,2,3,4,5,6,7,8,9])
+#utils.plot_confusion_matrix(confus_matrix, [0,1,2,3,4,5,6,7,8,9])
 
 
 ##### Recording model spec and performance
