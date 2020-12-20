@@ -22,6 +22,7 @@ model.add_hidden_layer(128)
 model.add_hidden_layer(256)
 model.add_hidden_layer(128)
 model.add_output_layer(10)
+# new_train() set tolerance to 0.01 per default and patience to 10
 model.new_train(X_train, X_val, y_train, y_val, 50 ,batch_size = 32, optimiser= "SGD", stopping_criterion= "xent")
 
 
