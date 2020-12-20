@@ -18,17 +18,22 @@ def split_data(X, y, test_size, normalise=True):
     
     """
     
-    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size = test_size)
+    X_train_proto, X_test, y_train_proto, y_test = train_test_split(X, y, test_size = test_size)
+    X_train, X_val, y_train, y_val = train_test_split(X_train_proto, y_train_proto, test_size = test_size)
     y_train_onehot = one_hot_encoding(y_train)
     y_test_onehot = one_hot_encoding(y_test)        
+    y_val_onehot = one_hot_encoding(y_val) 
     
     if normalise:
         X_train = normalize(X_train)
         X_test = normalize(X_test)
+        X_val = normalize(X_val)
         #X_train = np.apply_along_axis(normalise_input, 1, X_train)
         #X_test = np.apply_along_axis(normalise_input, 1, X_test)
     
-    return X_train, X_test, y_train_onehot, y_test_onehot
+    return X_train, X_test, X_val, y_train_onehot, y_test_onehot, y_val_onehot
+    
+
     
 
 def normalise_input(datapoint):
