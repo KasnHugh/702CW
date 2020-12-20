@@ -5,7 +5,7 @@ Created on Thu Dec 10 15:44:05 2020
 @author: Bjarten
 Source: https://github.com/Bjarten/early-stopping-pytorch
 """
-
+# Source: https://github.com/Bjarten/early-stopping-pytorch/blob/master/pytorchtools.py
 import numpy as np
 import torch
 
