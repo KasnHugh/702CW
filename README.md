@@ -14,11 +14,14 @@ Hugh Adams, hugh.adams@city.ac.uk
 
 ## Task 2 specific files:
 main.py
-      This is the file from which the neural network can be called. Open the file in an IDE an run the whole file at once
+      This file should be run. This is the file from which the neural network can be called. Open the file in an IDE an run the whole file at once
+
 neural_network.py
-      This is the file in which the neural network class is implemented. The class is caled from main.py
+      This file should not be run. This is the file in which the neural network class is implemented. The class is caled from main.py
+
 unittest  
       A folder that contains the file unittest_neural_network.py containing unit tests related to the development of the task 2 model. Don't run the code in this file as some of         the unit tests have not been updated to reflect refactoring of code.
+
 load_data.py
       This file should not be run. It contains a helper function used to generate the MNIST dataset for task 2. 
       
@@ -55,3 +58,7 @@ Boliga_scraper
       This folder contains the script used to scrape data about homes for sale
       
 Various other files including png, xlsx etc should not be considered as the most important plots etc. are found in the report. 
+
+## If issues with pytorchtools
+The module pytorchtools should work out of the box on your computers, but if not, there's a README here:
+https://github.com/Bjarten/early-stopping-pytorch/blob/master/README.md 
