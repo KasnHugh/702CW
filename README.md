@@ -5,7 +5,7 @@ Kasper Groes Ludvigsen, kasper.ludvigsen@city.ac.uk
 Hugh Adams, hugh.adams@city.ac.uk
 
 ## Task 2 specific files:
-### main.py
+### task2main.py
 **This file should be run**. This is the file from which the neural network can be called. Open the file in an IDE an run the whole file at once
 
 ### neural_network.py
