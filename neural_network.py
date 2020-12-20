@@ -4,14 +4,9 @@ Created on Sat Dec 12 21:04:42 2020
 
 @author: hugha
 """
-#from sklearn.model_selection import train_test_split
+
 import numpy as np
 import random
-#from sklearn.metrics import accuracy_score
-#import utils
-# TO DO:
-# move preprocessing out of the class
-# amend the train() method such that it call different activations functions based on layer parameter setting
 
 
 class new_neural_network:
@@ -39,9 +34,7 @@ class new_neural_network:
             }
         self.layers.append(parameters)
         
-    # Consider changing default bias to None if it does not work with 0
-    # but 0 is nicer for simplicity in other methods to avoid if statements
-    # (i.e. we can just add bias without checking if layer has a bias)
+
     # Setting deafult activation func to relu as our experiments suggest Sigmiod  
     # is performing poorly for the MNIST classification problem
     def add_hidden_layer(self, number_of_neurons, activation_func="relu", bias=0.0001):
@@ -162,8 +155,6 @@ class new_neural_network:
                 self.layers[layer]['weight_matrix'] +=self.layers[layer]['weight_update']
                 self.layers[layer]['bias'] += self.layers[layer]['bias_update']
     
-    #################################################################
-    #current_layer_weight_matrix, current_layer_activation_function, prev_layer_activations, prev_layer_bias
     def calculate_activations(self, prev_layer, current_layer):
         product = np.matmul(prev_layer['activations'], current_layer['weight_matrix']) + prev_layer['bias']
         
@@ -197,10 +188,6 @@ class new_neural_network:
         return np.array(new_array)
 
     
-    #################################################################    
-   # def xent_prime_softmax(self, output_layer, y_batch, last_hidden_layer):
-    #    #doing something that might be wrong
-     #   return self.weight_update((output_layer['activations'] - y_batch), last_hidden_layer['activations'])
     
     def Adam(self, current_layer, previous_layer, rho1 = 0.9, rho2 = 0.999, stab = 10e-8):
         gradient = self.SGD(current_layer, previous_layer)
@@ -222,14 +209,17 @@ class new_neural_network:
             weights.append(current_layer['delta'][i] * prev_layer['activations'][i][:,np.newaxis])
         return sum(weights) / len(weights)
 
+    
     def cost_prime_hidden(self, current_layer,layer_after):
         return np.array(self.activation_prime(current_layer)* np.matmul(layer_after['delta'], layer_after['weight_matrix'].transpose()))
 
+    
     def weight_update(self, err, activation):
         weights = []
         for i in range(len(activation)):
             weights.append(err[i] * activation[i][:,np.newaxis])
         return weights
+    
     
     def activation_prime(self, layer):
         if layer['activation_func'] == "sigmoid":
@@ -237,20 +227,21 @@ class new_neural_network:
         elif layer['activation_func'] == 'relu':
             return self.relu_prime(layer['g_inputs'])
 
+        
     def sigmoid_prime(self, g_input):
         return self.sigmoid_activation_func(g_input)*(1-self.sigmoid_activation_func(g_input)) 
+    
     
     def relu_prime(self, g_input):
         return np.where(g_input>0, 1.0, 0.0)  
     
-    ####################################################################
-    #Check that these work for correct size dims
     
     def MSE(self, output_layer, y_batch):
         why = output_layer['activations'] - y_batch
         why_squared = why*why
         MSE = (1/len(y_batch))*np.sum(why_squared)
         return MSE
+    
     
     def xent(self, output_layer, y_batch):
         return - sum(y_batch * np.log(output_layer))/len(y_batch)
