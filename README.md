@@ -50,7 +50,8 @@ This file should not be run. It contains a method used for recording model confi
 ### Boliga_scraper
 This folder contains the R script used to scrape data about homes for sale. 
 
-Various other files including png, xlsx etc should not be considered as the most important plots etc. are found in the report. 
+### Pytorchtools
+Module for early stopping. Source: https://github.com/Bjarten/early-stopping-pytorch/blob/master/pytorchtools.py
 
 ## If issues with pytorchtools
 The module pytorchtools should work out of the box on your computers, but if not, there's a README here:
