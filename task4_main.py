@@ -10,7 +10,6 @@ import task4_data as t4
 import pandas as pd
 import numpy as np
 from sklearn.model_selection import KFold
-import geocoding
 import copy
 import torch
 import torch.nn.functional as F
@@ -24,7 +23,6 @@ import torchvision.transforms as transforms
 import torchvision   
 from torch.utils.data import DataLoader, Dataset
 from torch.autograd import Variable
-#from visdom import Visdom
 import numpy as np
 import matplotlib.pyplot as plt
 from sklearn.preprocessing import MinMaxScaler
