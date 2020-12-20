@@ -9,6 +9,8 @@ from sklearn.preprocessing import normalize
 import numpy as np
 from sklearn.metrics import confusion_matrix
 import matplotlib.pyplot as plt
+import torch
+
 
 def split_data(X, y, test_size, normalise=True):
     """
@@ -50,14 +52,21 @@ def standardise(X):
         return X/np.max(X)
 
 def generate_confusion_matrix(all_predicted, all_labels):
-    cm_aggregated = np.zeros((10,10)).astype(int)
-    for pred, label in zip(all_predicted, all_labels):
-        cm = confusion_matrix(pred, label)
-        cm_aggregated += cm
-    return cm_aggregated
+    cat_all_predicted = torch.cat((all_predicted[0], all_predicted[1]))
+    for tensor in all_predicted[2:]:
+        cat_all_predicted = torch.cat((cat_all_predicted, tensor))
+    
+    cat_all_labels = torch.cat((all_labels[0], all_labels[1]))
+    for tensor in all_labels[2:]:
+        cat_all_labels = torch.cat((cat_all_labels, tensor))
 
-# Source: https://deeplizard.com/learn/video/0LhiS6yu2qQ 
+    confmatrix = confusion_matrix(cat_all_predicted, cat_all_labels) 
+    return confmatrix, cat_all_predicted, cat_all_labels
+
+
+
 def plot_confusion_matrix(cm, classes, normalize=False, title='Confusion matrix', cmap=plt.cm.Blues):
+    # Source: https://deeplizard.com/learn/video/0LhiS6yu2qQ 
     import itertools
 
     if normalize:
