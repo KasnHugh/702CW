@@ -412,12 +412,6 @@ def run_lin_reg(lin_reg_epochs, X_train, X_test, y_train, y_test, model_settings
 
 ####------------------ EXPERIMENTING WITH DIFFERENT SETTINGS -------------####
 
-
-# Run this once. Don't run it everytime an experiment has been performed
-#overview_of_models = []
-#############################
-
-
 # Settings
 exclude_cooperative_dwellings = True
 columns_to_use = ["Home_type", "rooms", "home_size_m2", "built_year",
@@ -450,11 +444,16 @@ X_train, X_test, y_train, y_test, model_specs, df = data_preprocessing(exclude_c
                                                                    experiment)
 
 # Running experiments
-"""
+
 
 lin_reg_model_spec = run_lin_reg(epochs_lin_reg, X_train, X_test, y_train, y_test, model_specs)
 nn_model_specs = run_nn(epochs_nn, X_train, X_test, y_train, y_test, lin_reg_model_spec)
+print("Linear regression model details:")
+print(lin_reg_model_spec)
+print("Neural network model details:")
+print(nn_model_specs)
 
+"""
 lin_reg_df = pd.DataFrame.from_dict(data=lin_reg_model_spec)
 nn_df = pd.DataFrame.from_dict(data=nn_model_specs)
 

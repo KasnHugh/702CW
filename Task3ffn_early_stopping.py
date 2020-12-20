@@ -118,7 +118,9 @@ optimizer = torch.optim.Adam(params=model.parameters())
 ################## DEFINING TRAIN AND TEST METHODS ###########################
 ##############################################################################
 def train_model(model, batch_size, patience, n_epochs, train_loader, valid_loader):
-    
+    # Code (only) for early stopping adapted from:
+    # https://github.com/Bjarten/early-stopping-pytorch/blob/master/MNIST_Early_Stopping_example.ipynb 
+
     # to track the training loss as the model trains
     train_losses = []
     # to track the validation loss as the model trains
@@ -226,6 +228,7 @@ train_loader, test_loader, valid_loader = create_datasets(batch_size)
 model, train_loss, valid_loss = train_model(model, batch_size, patience, n_epochs, train_loader, valid_loader)
 
 ### PLOTTING TRAIN AND VAL LOSS THROUGHOUT TRAINING
+# Source: https://github.com/Bjarten/early-stopping-pytorch/blob/master/MNIST_Early_Stopping_example.ipynb
 fig = plt.figure(figsize=(10,8))
 plt.plot(range(1,len(train_loss)+1),train_loss, label='Training Loss')
 plt.plot(range(1,len(valid_loss)+1),valid_loss,label='Validation Loss')
@@ -234,8 +237,8 @@ minposs = valid_loss.index(min(valid_loss))+1
 plt.axvline(minposs, linestyle='--', color='r',label='Early Stopping Checkpoint')
 plt.xlabel('epochs')
 plt.ylabel('loss')
-plt.ylim(0, 0.5) # consistent scale
-plt.xlim(0, len(train_loss)+1) # consistent scale
+plt.ylim(0, 0.5) 
+plt.xlim(0, len(train_loss)+1) 
 plt.grid(True)
 plt.legend()
 plt.tight_layout()

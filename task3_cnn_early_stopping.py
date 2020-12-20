@@ -36,8 +36,8 @@ import utils
 ########################## CREATING DATASETS #################################
 ##############################################################################
 def create_datasets(batch_size):
-# Method adapted from: 
-# https://github.com/Bjarten/early-stopping-pytorch/blob/master/MNIST_Early_Stopping_example.ipynb
+    # Method adapted from: 
+    # https://github.com/Bjarten/early-stopping-pytorch/blob/master/MNIST_Early_Stopping_example.ipynb
 
     # percentage of training set to use as validation
     valid_size = 0.2
@@ -125,8 +125,8 @@ class ConvNet1(nn.Module):
 ##############################################################################
 def train(model, train_loader, valid_loader, num_epochs = 5,
           batch_size = 100, learning_rate = 0.001, patience = 20):
-# Code (only) for early stopping adapted from:
-# https://github.com/Bjarten/early-stopping-pytorch/blob/master/MNIST_Early_Stopping_example.ipynb 
+    # Code (only) for early stopping adapted from:
+    # https://github.com/Bjarten/early-stopping-pytorch/blob/master/MNIST_Early_Stopping_example.ipynb 
 
     model.criterion = nn.CrossEntropyLoss()
 
